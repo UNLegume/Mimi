@@ -101,7 +101,7 @@ Examples:
         const client = createClient(config.claude.model);
 
         console.log('記事を検証中...');
-        const { verified, rejected } = await verifyArticles(recent, client, config.claude.model);
+        const { verified, rejected } = verifyArticles(recent);
 
         console.log('--- 検証結果 ---');
         console.log(`  verified: ${verified.length}件`);

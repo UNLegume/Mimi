@@ -19,12 +19,6 @@ Examples:
       try {
         const config = loadConfig(options.config);
 
-        if (!process.env.ANTHROPIC_API_KEY) {
-          console.error('エラー: ANTHROPIC_API_KEY が設定されていません。');
-          console.error('.env ファイルまたは環境変数に ANTHROPIC_API_KEY を設定してください。');
-          process.exit(1);
-        }
-
         const store = new ArticleStore();
 
         // fetched.json から記事を読み込み
@@ -39,7 +33,7 @@ Examples:
 
         // ステップ1: 検証
         console.log('\n記事を検証中...');
-        const { verified, rejected } = await verifyArticles(articles, client, config.claude.model);
+        const { verified, rejected } = verifyArticles(articles);
 
         console.log(`\n--- 検証結果 ---`);
         console.log(`  verified: ${verified.length}件`);
