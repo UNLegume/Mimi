@@ -13,6 +13,11 @@ export function registerFetchCommand(program: Command): void {
     .command('fetch')
     .description('設定されたソースから記事を収集して保存')
     .option('-c, --config <path>', '設定ファイルパス', 'config.yaml')
+    .addHelpText('after', `
+Examples:
+  $ mimi fetch                  全ソースから記事を収集
+  $ mimi fetch -c custom.yaml   カスタム設定ファイルを使用
+`)
     .action(async (options: { config: string }) => {
       try {
         const config = loadConfig(options.config);

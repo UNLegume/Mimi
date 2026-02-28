@@ -4,7 +4,7 @@
   "description": "海外AI情報監視・翻訳CLIツール",
   "type": "module",
   "bin": {
-    "mimi": "./dist/index.js"
+    "mimi": "./src/index.ts"
   },
   "scripts": {
     "build": "tsc",

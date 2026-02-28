@@ -18,6 +18,11 @@ export function registerRunCommand(program: Command): void {
     .command('run')
     .description('fetch→select→generateの全パイプラインを一括実行')
     .option('-c, --config <path>', '設定ファイルパス', 'config.yaml')
+    .addHelpText('after', `
+Examples:
+  $ mimi run                    fetch→select→generate を一括実行
+  $ mimi run -c custom.yaml     カスタム設定で一括実行
+`)
     .action(async (options: { config: string }) => {
       try {
         notify('Mimi', 'パイプラインを開始します');

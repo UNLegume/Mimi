@@ -9,6 +9,11 @@ export function registerGenerateCommand(program: Command): void {
     .command('generate [article-id]')
     .description('選別済み記事を日本語解説記事として生成')
     .option('-c, --config <path>', '設定ファイルパス', 'config.yaml')
+    .addHelpText('after', `
+Examples:
+  $ mimi generate               全選別済み記事を生成
+  $ mimi generate abc123        指定IDの記事のみ生成
+`)
     .action(async (articleId: string | undefined, options: { config: string }) => {
       try {
         const config = loadConfig(options.config);

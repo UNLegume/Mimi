@@ -1,3 +1,4 @@
+#!/usr/bin/env -S node --import tsx/esm
 import { config } from 'dotenv';
 config({ path: '.env.local' });
 config({ path: '.env' });
@@ -22,6 +23,11 @@ program
   .command('sources')
   .description('登録されているソース一覧を表示')
   .option('-c, --config <path>', '設定ファイルパス', 'config.yaml')
+  .addHelpText('after', `
+Examples:
+  $ mimi sources                デフォルト設定のソース一覧
+  $ mimi sources -c custom.yaml カスタム設定ファイル
+`)
   .action((options: { config: string }) => {
     try {
       const config = loadConfig(options.config);
@@ -52,5 +58,15 @@ registerSelectCommand(program);
 registerGenerateCommand(program);
 registerRunCommand(program);
 registerAccountsCommand(program);
+
+program.addHelpText('after', `
+Examples:
+  $ mimi fetch                  記事を収集
+  $ mimi select                 記事を選別
+  $ mimi generate               記事を生成
+  $ mimi run                    全パイプラインを一括実行
+  $ mimi accounts list          監視アカウント一覧
+  $ mimi sources                ソース一覧を表示
+`);
 
 program.parse();

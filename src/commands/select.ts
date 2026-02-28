@@ -10,6 +10,11 @@ export function registerSelectCommand(program: Command): void {
     .command('select')
     .description('記事を検証・選別して保存')
     .option('-c, --config <path>', '設定ファイルパス', 'config.yaml')
+    .addHelpText('after', `
+Examples:
+  $ mimi select                 収集済み記事を検証・選別
+  $ mimi select -c custom.yaml  カスタム設定ファイルを使用
+`)
     .action(async (options: { config: string }) => {
       try {
         const config = loadConfig(options.config);

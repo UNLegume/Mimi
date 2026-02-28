@@ -12,13 +12,25 @@ import { stdin as input, stdout as output } from 'node:process';
 export function registerAccountsCommand(program: Command): void {
   const accounts = program
     .command('accounts')
-    .description('監視アカウントの管理');
+    .description('監視アカウントの管理')
+    .addHelpText('after', `
+Examples:
+  $ mimi accounts list                   監視アカウント一覧
+  $ mimi accounts discover               候補アカウントを発見
+  $ mimi accounts add handle -s bluesky  アカウントを追加
+  $ mimi accounts remove handle          アカウントを削除
+`);
 
   // --- list ---
   accounts
     .command('list')
     .description('監視中のアカウント一覧を表示')
     .option('-c, --config <path>', '設定ファイルパス', 'config.yaml')
+    .addHelpText('after', `
+Examples:
+  $ mimi accounts list                   全アカウント一覧
+  $ mimi accounts list -c custom.yaml    カスタム設定ファイル
+`)
     .action(async (options: { config: string }) => {
       try {
         const groups = getAccountsFromConfig(options.config);
@@ -49,6 +61,13 @@ export function registerAccountsCommand(program: Command): void {
     .option('-l, --limit <number>', '表示件数上限', '10')
     .option('--min-score <number>', '最低スコア', '6')
     .option('--skip-scoring', 'スコアリングをスキップ')
+    .addHelpText('after', `
+Examples:
+  $ mimi accounts discover                       全ソースから候補発見
+  $ mimi accounts discover -s bluesky             Blueskyのみ
+  $ mimi accounts discover -l 5 --min-score 7     上位5件、スコア7以上
+  $ mimi accounts discover --skip-scoring          スコアリングなし
+`)
     .action(async (options: {
       config: string;
       source: string;
@@ -167,6 +186,12 @@ export function registerAccountsCommand(program: Command): void {
     .option('-n, --name <name>', '表示名')
     .option('-r, --role <role>', '役職・説明')
     .option('--category <category>', 'カテゴリ', '研究者・開発者')
+    .addHelpText('after', `
+Examples:
+  $ mimi accounts add "user.bsky.social" -s bluesky
+  $ mimi accounts add "user.bsky.social" -s bluesky -n "User Name" -r "AI Researcher"
+  $ mimi accounts add "username" -s twitter --category "公式アカウント"
+`)
     .action(async (
       handle: string,
       options: {
@@ -199,6 +224,11 @@ export function registerAccountsCommand(program: Command): void {
     .description('アカウントを監視リストから削除')
     .argument('<handle>', 'アカウントハンドル')
     .option('-c, --config <path>', '設定ファイルパス', 'config.yaml')
+    .addHelpText('after', `
+Examples:
+  $ mimi accounts remove "user.bsky.social"
+  $ mimi accounts remove "username"
+`)
     .action(async (
       handle: string,
       options: { config: string }

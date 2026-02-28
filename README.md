@@ -16,6 +16,7 @@
 git clone <repository-url>
 cd Mimi
 npm install
+npm link    # mimi コマンドをグローバルに登録
 ```
 
 ### 環境変数
@@ -37,26 +38,52 @@ cp .env.example .env
 ### 全パイプライン一括実行
 
 ```bash
-npx tsx src/index.ts run
+mimi run
 ```
 
 ### 個別ステップ
 
 ```bash
 # ソースから記事を収集
-npx tsx src/index.ts fetch
+mimi fetch
 
 # AI検証・スコアリング・選別
-npx tsx src/index.ts select
+mimi select
 
 # 翻訳・日本語記事生成
-npx tsx src/index.ts generate
+mimi generate
 
 # 特定記事のみ生成
-npx tsx src/index.ts generate <article-id>
+mimi generate <article-id>
 
 # 登録ソース一覧表示
-npx tsx src/index.ts sources
+mimi sources
+```
+
+### 監視アカウント管理
+
+```bash
+# アカウント一覧
+mimi accounts list
+
+# 新規候補を発見
+mimi accounts discover
+
+# アカウント追加
+mimi accounts add "user.bsky.social" -s bluesky
+
+# アカウント削除
+mimi accounts remove "user.bsky.social"
+```
+
+### ヘルプ
+
+各コマンドに `--help` で使用例を確認できる。
+
+```bash
+mimi --help
+mimi fetch --help
+mimi accounts discover --help
 ```
 
 ### ビルドして実行
