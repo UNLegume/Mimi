@@ -1,9 +1,14 @@
+import { config } from 'dotenv';
+config({ path: '.env.local' });
+config({ path: '.env' });
+
 import { Command } from 'commander';
 import { loadConfig } from './config/schema.js';
 import { registerFetchCommand } from './commands/fetch.js';
 import { registerSelectCommand } from './commands/select.js';
 import { registerGenerateCommand } from './commands/generate.js';
 import { registerRunCommand } from './commands/run.js';
+import { registerAccountsCommand } from './commands/accounts.js';
 
 const program = new Command();
 
@@ -46,5 +51,6 @@ registerFetchCommand(program);
 registerSelectCommand(program);
 registerGenerateCommand(program);
 registerRunCommand(program);
+registerAccountsCommand(program);
 
 program.parse();
