@@ -47,7 +47,7 @@ sources:
   #   limit: 20
 
 selection:
-  maxArticles: 5
+  maxArticles: 3
   criteria:
     - novelty
     - impact
@@ -59,3 +59,6 @@ output:
 
 claude:
   model: "claude-sonnet-4-6"
+
+notion:
+  collectionDbId: "c65611d0-119b-407e-9c0a-65b5ce4d396e"

@@ -75,12 +75,19 @@ const ClaudeSchema = z.object({
   model: z.string(),
 });
 
+// Notion設定
+const NotionSchema = z.object({
+  collectionDbId: z.string(),
+  tokenEnvVar: z.string().default('NOTION_API_TOKEN'),
+});
+
 // 全体設定スキーマ
 export const ConfigSchema = z.object({
   sources: z.array(SourceSchema),
   selection: SelectionSchema,
   output: OutputSchema,
   claude: ClaudeSchema,
+  notion: NotionSchema.optional(),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;

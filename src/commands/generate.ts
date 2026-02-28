@@ -1,8 +1,11 @@
 import { Command } from 'commander';
+import type { Client } from '@notionhq/client';
 import { loadConfig } from '../config/schema.js';
 import { ArticleStore } from '../store/articles.js';
 import { createClient } from '../ai/client.js';
 import { generateArticle } from '../ai/generator.js';
+import { createNotionClient } from '../notion/client.js';
+import { findDatePage, publishArticleToNotion } from '../notion/publisher.js';
 
 export function registerGenerateCommand(program: Command): void {
   program
@@ -48,11 +51,42 @@ Examples:
         const client = createClient(config.claude.model);
         const tone = config.output.tone;
 
+        // Notion クライアント初期化（設定がある場合のみ）
+        let notionClient: Client | null = null;
+        let datePage: { id: string; url: string } | null = null;
+
+        if (config.notion) {
+          try {
+            notionClient = createNotionClient(config.notion.tokenEnvVar);
+            const today = new Date().toISOString().split('T')[0].replace(/-/g, '/');
+            datePage = await findDatePage(notionClient, config.notion.collectionDbId, today);
+            if (datePage) {
+              console.log(`Notion 日付ページを検出: ${today}`);
+            } else {
+              console.warn(`Notion に ${today} の日付ページが見つかりません。コンソール出力にフォールバックします。`);
+            }
+          } catch (error) {
+            console.warn(`Notion 初期化エラー: ${error instanceof Error ? error.message : String(error)}`);
+            console.warn('コンソール出力にフォールバックします。');
+          }
+        }
+
         for (const article of targetArticles) {
           console.log(`\n生成中: ${article.title}`);
           try {
             const content = await generateArticle(article, client, config.claude.model, tone);
-            console.log(content);
+            // Notion に出力（設定がある場合）
+            if (notionClient && datePage) {
+              const result = await publishArticleToNotion(notionClient, datePage.id, article.title, content);
+              if (result.success) {
+                console.log(`  → Notion に公開: ${result.notionPageUrl}`);
+              } else {
+                console.warn(`  ⚠ Notion 公開失敗: ${result.error}`);
+                console.log(content);
+              }
+            } else {
+              console.log(content);
+            }
             store.savePublishedTopic({
               id: article.id,
               title: article.title,
