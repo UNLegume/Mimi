@@ -1,6 +1,41 @@
 import { Client } from '@notionhq/client';
 import { markdownToBlocks } from './markdown-to-blocks.js';
 import type { PublishResult } from './types.js';
+import { createNotionClient } from './client.js';
+
+export interface NotionContext {
+  client: Client;
+  datePage: { id: string; url: string };
+  firstBlockId?: string;
+}
+
+export async function initNotionContext(
+  notionConfig: { tokenEnvVar?: string; collectionDbId: string },
+): Promise<NotionContext | null> {
+  try {
+    const client = createNotionClient(notionConfig.tokenEnvVar);
+    const today = new Date().toISOString().split('T')[0].replace(/-/g, '/');
+    const datePage = await findDatePage(client, notionConfig.collectionDbId, today);
+    if (datePage) {
+      console.log(`Notion 日付ページを検出: ${today}`);
+      // N+1修正: firstBlockId をここで1回だけ取得
+      const listResult = await client.blocks.children.list({
+        block_id: datePage.id,
+        page_size: 1,
+      });
+      const firstBlockId = listResult.results[0]?.id;
+      return { client, datePage, firstBlockId };
+    } else {
+      console.warn(`Notion に ${today} の日付ページが見つかりません。コンソール出力にフォールバックします。`);
+      return null;
+    }
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.warn(`Notion 初期化エラー: ${msg}`);
+    console.warn('コンソール出力にフォールバックします。');
+    return null;
+  }
+}
 
 export async function findDatePage(
   client: Client,
@@ -30,33 +65,33 @@ export async function publishArticleToNotion(
   datePageId: string,
   title: string,
   markdown: string,
+  firstBlockId?: string,
 ): Promise<PublishResult> {
   try {
     // Step 1: Convert markdown to Notion blocks
     const blocks = markdownToBlocks(markdown);
 
-    // Step 2: Get the first block of the date page
-    const listResult = await client.blocks.children.list({
-      block_id: datePageId,
-      page_size: 1,
-    });
-
-    const firstBlockId = listResult.results[0].id;
-
-    // Step 3: Create a child page with content, positioned after the first block
+    // Step 2: Create a child page with content, positioned after the first block (if present)
     const firstChunk = blocks.slice(0, 100);
-    const pageResult = await client.pages.create({
+    const createOptions: Parameters<typeof client.pages.create>[0] = {
       parent: { page_id: datePageId },
       properties: {
         title: { title: [{ text: { content: title } }] },
       },
       content: firstChunk,
-      position: { type: 'after_block', after_block: { id: firstBlockId } },
-    });
+    };
 
+    if (firstBlockId) {
+      (createOptions as Record<string, unknown>).position = {
+        type: 'after_block',
+        after_block: { id: firstBlockId },
+      };
+    }
+
+    const pageResult = await client.pages.create(createOptions);
     const newPageId = pageResult.id;
 
-    // Step 4: Append remaining content blocks in chunks of 100
+    // Step 3: Append remaining content blocks in chunks of 100
     for (let i = 100; i < blocks.length; i += 100) {
       const chunk = blocks.slice(i, i + 100);
       await client.blocks.children.append({
@@ -65,7 +100,7 @@ export async function publishArticleToNotion(
       });
     }
 
-    // Step 5: Construct Notion page URL
+    // Step 4: Construct Notion page URL
     const notionPageUrl = `https://www.notion.so/${newPageId.replace(/-/g, '')}`;
 
     return { success: true, articleTitle: title, notionPageUrl };

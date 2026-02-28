@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .env
+.env.local
 data/
 output/
 .claude/settings.local.json

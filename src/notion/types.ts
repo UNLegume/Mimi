@@ -1,8 +1,3 @@
-export interface NotionConfig {
-  collectionDbId: string;
-  tokenEnvVar?: string;
-}
-
 export interface PublishResult {
   success: boolean;
   articleTitle: string;

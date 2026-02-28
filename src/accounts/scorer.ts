@@ -7,6 +7,8 @@
 
 import { createClient, callClaude } from '../ai/client.js';
 import type { AccountCandidate, ScoringResult } from './types.js';
+import { extractJsonFromResponse } from '../utils/json.js';
+import { toErrorMessage } from '../utils/error.js';
 
 const BATCH_SIZE = 10;
 
@@ -15,24 +17,6 @@ const SCORING_SYSTEM_PROMPT =
 
 const TWITTER_FALLBACK_SYSTEM_PROMPT =
   'あなたはAI業界のソーシャルメディア専門家です。Twitter/Xで注目すべきAI関連アカウントを提案してください。';
-
-/**
- * Claude のレスポンスから JSON 配列を抽出する。
- * マークダウンコードブロック（```json ... ```）で囲まれている場合も処理する。
- */
-function extractJsonFromResponse(response: string): string {
-  // マークダウンコードブロックを除去
-  const codeBlockMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (codeBlockMatch) {
-    return codeBlockMatch[1].trim();
-  }
-  // JSON 配列を直接探す
-  const arrayMatch = response.match(/\[[\s\S]*\]/);
-  if (arrayMatch) {
-    return arrayMatch[0];
-  }
-  return response.trim();
-}
 
 /**
  * アカウント候補を Claude API でスコアリングする。
@@ -96,7 +80,7 @@ export async function scoreCandidates(
     } catch (error) {
       console.warn(
         `バッチ ${Math.floor(i / BATCH_SIZE) + 1} のスコアリングに失敗しました:`,
-        error instanceof Error ? error.message : String(error)
+        toErrorMessage(error)
       );
     }
   }

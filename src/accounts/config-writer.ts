@@ -5,7 +5,9 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { loadConfig } from '../config/schema.js';
+import type { Config } from '../config/schema.js';
 import type { Platform, AccountOperationResult } from './types.js';
+import { toErrorMessage } from '../utils/error.js';
 
 // ----------------------------------------------------------------
 // 内部ユーティリティ
@@ -297,11 +299,13 @@ export function removeAccountFromConfig(
  * config.yaml からプラットフォーム別のアカウント一覧を返す
  *
  * YAML パースには loadConfig() を使用する（コメントアウトされたブロックは除外される）
+ * configOrPath が文字列の場合は loadConfig() でファイルを読み込む。
+ * Config オブジェクトの場合はそのまま使用する。
  */
 export function getAccountsFromConfig(
-  configPath: string,
+  configOrPath: Config | string,
 ): { platform: Platform; accounts: string[] }[] {
-  const config = loadConfig(configPath);
+  const config = typeof configOrPath === 'string' ? loadConfig(configOrPath) : configOrPath;
 
   const result: { platform: Platform; accounts: string[] }[] = [];
 

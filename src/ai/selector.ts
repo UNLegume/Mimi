@@ -3,6 +3,7 @@ import type { Article } from '../sources/types.js';
 import type { PublishedTopic } from '../store/articles.js';
 import { subDays } from 'date-fns';
 import { callClaude } from './client.js';
+import { extractJsonFromResponse } from '../utils/json.js';
 
 interface ScoredArticle {
   id: string;
@@ -63,11 +64,8 @@ ${criteriaText}${topicsSection}
 
   try {
     const response = await callClaude(client, model, systemPrompt, userPrompt);
-    const jsonMatch = response.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      throw new Error('JSONが見つかりませんでした');
-    }
-    const scores: ScoredArticle[] = JSON.parse(jsonMatch[0]);
+    const jsonStr = extractJsonFromResponse(response);
+    const scores: ScoredArticle[] = JSON.parse(jsonStr);
 
     // 総合スコアを計算してソート（不正値は 0 に丸める）
     const scored = scores.map(s => ({

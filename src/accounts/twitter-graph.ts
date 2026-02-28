@@ -4,6 +4,9 @@
  */
 
 import type { AccountCandidate } from './types.js';
+import { sleep } from '../utils/sleep.js';
+import { toErrorMessage } from '../utils/error.js';
+import { TWITTER_API_BASE } from '../sources/twitter.js';
 
 // ローカルインターフェース
 
@@ -23,9 +26,6 @@ interface TwitterFollowingResponse {
   meta?: { next_token?: string; result_count: number };
 }
 
-// Twitter API ベース URL
-const TWITTER_API_BASE = 'https://api.twitter.com/2';
-
 // リクエスト間の遅延（ミリ秒）
 const REQUEST_DELAY_MS = 1000;
 
@@ -35,13 +35,6 @@ const REQUEST_DELAY_MS = 1000;
 export function isTwitterAvailable(): boolean {
   return typeof process.env.TWITTER_BEARER_TOKEN === 'string' &&
     process.env.TWITTER_BEARER_TOKEN.trim().length > 0;
-}
-
-/**
- * 指定時間だけ待機するユーティリティ
- */
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -92,7 +85,7 @@ export async function getFollows(
   try {
     userId = await resolveUserId(username);
   } catch (err) {
-    console.warn(`Twitter: @${username} のユーザー ID 解決に失敗しました:`, err instanceof Error ? err.message : err);
+    console.warn(`Twitter: @${username} のユーザー ID 解決に失敗しました:`, toErrorMessage(err));
     return [];
   }
 
@@ -119,7 +112,7 @@ export async function getFollows(
     try {
       response = await fetch(url, { headers: authHeaders() });
     } catch (err) {
-      console.warn(`Twitter: @${username} のフォロー取得中にネットワークエラー:`, err instanceof Error ? err.message : err);
+      console.warn(`Twitter: @${username} のフォロー取得中にネットワークエラー:`, toErrorMessage(err));
       break;
     }
 

@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { sleep } from '../utils/sleep.js';
 
 export function createClient(model: string): Anthropic {
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -39,7 +40,7 @@ export async function callClaude(
       lastError = error;
       if (attempt < maxRetries) {
         console.warn(`API呼び出し失敗 (${attempt}/${maxRetries}回目)。1秒後にリトライします...`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await sleep(1000);
       }
     }
   }

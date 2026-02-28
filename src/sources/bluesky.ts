@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import type { Article, FetchResult, SourceAdapter } from './types.js';
 import type { BlueskySourceConfig } from '../config/schema.js';
 
-const BSKY_API_BASE = 'https://public.api.bsky.app/xrpc';
+export const BSKY_API_BASE = 'https://public.api.bsky.app/xrpc';
 
 interface BskyExternalEmbed {
   uri: string;

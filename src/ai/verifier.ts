@@ -1,6 +1,7 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import type { Article } from '../sources/types.js';
 import { callClaude } from './client.js';
+import { extractJsonFromResponse } from '../utils/json.js';
 
 interface VerifyResult {
   id: string;
@@ -68,11 +69,8 @@ export async function verifyArticles(
 
   try {
     const response = await callClaude(client, model, systemPrompt, userPrompt);
-    const jsonMatch = response.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      throw new Error('JSONが見つかりませんでした');
-    }
-    const results: VerifyResult[] = JSON.parse(jsonMatch[0]);
+    const jsonStr = extractJsonFromResponse(response);
+    const results: VerifyResult[] = JSON.parse(jsonStr);
 
     for (const result of results) {
       const article = needsVerification.find(a => a.id === result.id);

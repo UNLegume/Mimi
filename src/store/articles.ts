@@ -61,10 +61,15 @@ export class ArticleStore {
   // JSONファイルから記事を読み込み（Date型を復元）
   load(filename: string): Article[] {
     const filePath = join(this.dataDir, filename);
-    if (!existsSync(filePath)) {
+    let raw: string;
+    try {
+      raw = readFileSync(filePath, 'utf-8');
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+        console.error(`${filename} の読み込みに失敗しました。`);
+      }
       return [];
     }
-    const raw = readFileSync(filePath, 'utf-8');
     let records: ArticleRecord[];
     try {
       records = JSON.parse(raw);
@@ -84,10 +89,15 @@ export class ArticleStore {
   // 投稿済みトピックをJSONファイルから読み込み
   loadPublishedTopics(): PublishedTopic[] {
     const filePath = join(this.dataDir, 'published_topics.json');
-    if (!existsSync(filePath)) {
+    let raw: string;
+    try {
+      raw = readFileSync(filePath, 'utf-8');
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+        console.error('published_topics.json の読み込みに失敗しました。');
+      }
       return [];
     }
-    const raw = readFileSync(filePath, 'utf-8');
     try {
       return JSON.parse(raw) as PublishedTopic[];
     } catch {
@@ -101,6 +111,22 @@ export class ArticleStore {
     const filePath = join(this.dataDir, 'published_topics.json');
     const existing = this.loadPublishedTopics();
     existing.push(topic);
+    writeFileSync(filePath, JSON.stringify(existing, null, 2), 'utf-8');
+  }
+
+  // 複数の投稿済みトピックを一括保存
+  savePublishedTopics(topics: PublishedTopic[]): void {
+    if (topics.length === 0) return;
+    const filePath = join(this.dataDir, 'published-topics.json');
+    let existing: PublishedTopic[] = [];
+    try {
+      existing = JSON.parse(readFileSync(filePath, 'utf-8'));
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+        console.error('published-topics.json の読み込みに失敗しました。');
+      }
+    }
+    existing.push(...topics);
     writeFileSync(filePath, JSON.stringify(existing, null, 2), 'utf-8');
   }
 
@@ -131,10 +157,10 @@ export class ArticleStore {
   appendHistory(record: HistoryRecord): void {
     const filePath = join(this.dataDir, 'history.json');
     let existing: HistoryRecord[] = [];
-    if (existsSync(filePath)) {
-      try {
-        existing = JSON.parse(readFileSync(filePath, 'utf-8'));
-      } catch {
+    try {
+      existing = JSON.parse(readFileSync(filePath, 'utf-8'));
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
         console.error('history.json のJSONパースに失敗しました。');
       }
     }

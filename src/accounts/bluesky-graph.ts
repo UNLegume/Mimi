@@ -5,8 +5,9 @@
  */
 
 import type { AccountCandidate } from './types.js';
-
-const BSKY_API_BASE = 'https://public.api.bsky.app/xrpc';
+import { sleep } from '../utils/sleep.js';
+import { toErrorMessage } from '../utils/error.js';
+import { BSKY_API_BASE } from '../sources/bluesky.js';
 
 const DEFAULT_FOLLOWS_LIMIT = 500;
 const DEFAULT_MIN_SHARED_FOLLOWS = 2;
@@ -23,13 +24,6 @@ interface BlueskyProfile {
 interface GetFollowsResponse {
   follows: BlueskyProfile[];
   cursor?: string;
-}
-
-/**
- * 指定ミリ秒間スリープする
- */
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
@@ -68,8 +62,7 @@ export async function getFollows(
     try {
       response = await fetch(url.toString());
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error(`Bluesky: @${handle} のフォロー取得中にネットワークエラー: ${message}`);
+      console.error(`Bluesky: @${handle} のフォロー取得中にネットワークエラー: ${toErrorMessage(error)}`);
       break;
     }
 
@@ -88,8 +81,7 @@ export async function getFollows(
     try {
       data = (await response.json()) as GetFollowsResponse;
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error(`Bluesky: @${handle} のレスポンス解析失敗: ${message}`);
+      console.error(`Bluesky: @${handle} のレスポンス解析失敗: ${toErrorMessage(error)}`);
       break;
     }
 
@@ -120,8 +112,9 @@ export async function discoverCandidates(
   // 監視アカウントごとのフォロー一覧を並行取得
   const settledResults = await Promise.allSettled(
     monitoredHandles.map(async handle => {
+      console.log(`Bluesky: ${handle} のフォロー取得中...`);
       const follows = await getFollows(handle);
-      console.log(`Bluesky: ${handle} のフォロー取得中... (${follows.length}件)`);
+      console.log(`Bluesky: ${handle} のフォロー取得完了 (${follows.length}件)`);
       return { handle, follows };
     })
   );
@@ -136,7 +129,7 @@ export async function discoverCandidates(
 
   for (const result of settledResults) {
     if (result.status === 'rejected') {
-      console.error(`Bluesky: フォロー取得に失敗したアカウントがあります: ${String(result.reason)}`);
+      console.error(`Bluesky: フォロー取得に失敗したアカウントがあります: ${toErrorMessage(result.reason)}`);
       continue;
     }
 

@@ -6,6 +6,7 @@ import { discoverCandidates as discoverBluesky } from '../accounts/bluesky-graph
 import { discoverCandidates as discoverTwitter, isTwitterAvailable } from '../accounts/twitter-graph.js';
 import { scoreCandidates, filterByScore, generateTwitterCandidates } from '../accounts/scorer.js';
 import type { Platform, AccountCandidate } from '../accounts/types.js';
+import { toErrorMessage } from '../utils/error.js';
 import * as readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 
@@ -47,7 +48,7 @@ Examples:
 
         console.log(`\n合計: ${total} アカウント`);
       } catch (error) {
-        console.error('accounts list でエラーが発生しました:', error);
+        console.error('accounts list でエラーが発生しました:', toErrorMessage(error));
         process.exit(1);
       }
     });
@@ -77,7 +78,7 @@ Examples:
     }) => {
       try {
         const config = loadConfig(options.config);
-        const groups = getAccountsFromConfig(options.config);
+        const groups = getAccountsFromConfig(config);
         const limit = parseInt(options.limit, 10);
         const minScore = parseInt(options.minScore, 10);
 
@@ -105,11 +106,6 @@ Examples:
         let finalCandidates = allCandidates;
 
         if (!options.skipScoring && allCandidates.length > 0) {
-          if (!process.env.ANTHROPIC_API_KEY) {
-            console.error('エラー: ANTHROPIC_API_KEY が設定されていません。');
-            console.error('.env ファイルまたは環境変数に ANTHROPIC_API_KEY を設定してください。');
-            process.exit(1);
-          }
           const scored = await scoreCandidates(allCandidates, config.claude.model);
           finalCandidates = filterByScore(scored, minScore);
         }
@@ -171,7 +167,7 @@ Examples:
           rl.close();
         }
       } catch (error) {
-        console.error('accounts discover でエラーが発生しました:', error);
+        console.error('accounts discover でエラーが発生しました:', toErrorMessage(error));
         process.exit(1);
       }
     });
@@ -213,7 +209,7 @@ Examples:
         console.log(configResult.message);
         console.log(docResult.message);
       } catch (error) {
-        console.error('accounts add でエラーが発生しました:', error);
+        console.error('accounts add でエラーが発生しました:', toErrorMessage(error));
         process.exit(1);
       }
     });
@@ -239,7 +235,7 @@ Examples:
         console.log(result.message);
         console.log(docResult.message);
       } catch (error) {
-        console.error('accounts remove でエラーが発生しました:', error);
+        console.error('accounts remove でエラーが発生しました:', toErrorMessage(error));
         process.exit(1);
       }
     });

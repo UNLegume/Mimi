@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import type { Article, FetchResult, SourceAdapter } from './types.js';
 import type { TwitterSourceConfig } from '../config/schema.js';
 
-const TWITTER_API_BASE = 'https://api.twitter.com/2';
+export const TWITTER_API_BASE = 'https://api.twitter.com/2';
 
 interface TwitterUrlEntity {
   url: string;

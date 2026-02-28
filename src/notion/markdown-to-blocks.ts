@@ -1,3 +1,5 @@
+import type { BlockObjectRequest } from '@notionhq/client';
+
 type RichTextSegment = {
   text: {
     content: string;
@@ -50,9 +52,9 @@ export function parseRichText(text: string): RichTextSegment[] {
   return segments;
 }
 
-export function markdownToBlocks(markdown: string): any[] {
+export function markdownToBlocks(markdown: string): BlockObjectRequest[] {
   const lines = markdown.split('\n');
-  const blocks: any[] = [];
+  const blocks: BlockObjectRequest[] = [];
   let quoteLines: string[] = [];
 
   const flushQuote = () => {

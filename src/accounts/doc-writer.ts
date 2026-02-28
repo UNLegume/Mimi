@@ -5,6 +5,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { Platform, AccountOperationResult } from './types.js';
+import { toErrorMessage } from '../utils/error.js';
 
 /**
  * プラットフォームに対応するドキュメントファイルのパスを返す
@@ -114,10 +115,7 @@ function addRowToSection(
   role: string,
   category: string
 ): string {
-  const row =
-    platform === 'bluesky'
-      ? `| ${name} | \`${handle}\` | ${role} |`
-      : `| ${name} | \`${handle}\` | ${role} |`;
+  const row = `| ${name} | \`${handle}\` | ${role} |`;
 
   // テーブルの最後の行の後に追加する汎用関数
   const insertAfterLastTableRow = (text: string, sectionStart: number, sectionEnd: number): string => {
@@ -190,7 +188,7 @@ export function addAccountToDoc(
   } catch (err) {
     return {
       success: false,
-      message: `ドキュメントファイルの読み込みに失敗しました: ${docPath} (${String(err)})`,
+      message: `ドキュメントファイルの読み込みに失敗しました: ${docPath} (${toErrorMessage(err)})`,
       handle,
       platform,
     };
@@ -234,7 +232,7 @@ export function addAccountToDoc(
   } catch (err) {
     return {
       success: false,
-      message: `ドキュメントファイルの書き込みに失敗しました: ${docPath} (${String(err)})`,
+      message: `ドキュメントファイルの書き込みに失敗しました: ${docPath} (${toErrorMessage(err)})`,
       handle,
       platform,
     };
@@ -263,7 +261,7 @@ export function removeAccountFromDoc(
   } catch (err) {
     return {
       success: false,
-      message: `ドキュメントファイルの読み込みに失敗しました: ${docPath} (${String(err)})`,
+      message: `ドキュメントファイルの読み込みに失敗しました: ${docPath} (${toErrorMessage(err)})`,
       handle,
       platform,
     };
@@ -302,7 +300,7 @@ export function removeAccountFromDoc(
   } catch (err) {
     return {
       success: false,
-      message: `ドキュメントファイルの書き込みに失敗しました: ${docPath} (${String(err)})`,
+      message: `ドキュメントファイルの書き込みに失敗しました: ${docPath} (${toErrorMessage(err)})`,
       handle,
       platform,
     };

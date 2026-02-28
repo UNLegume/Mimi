@@ -1,7 +1,7 @@
 import { Command } from 'commander';
-import type { Client } from '@notionhq/client';
 import { loadConfig } from '../config/schema.js';
 import { ArticleStore } from '../store/articles.js';
+import type { PublishedTopic } from '../store/articles.js';
 import { RssAdapter } from '../sources/rss.js';
 import { HackerNewsAdapter } from '../sources/hackernews.js';
 import { BlueskyAdapter } from '../sources/bluesky.js';
@@ -12,8 +12,8 @@ import { verifyArticles } from '../ai/verifier.js';
 import { selectArticles } from '../ai/selector.js';
 import { generateArticle } from '../ai/generator.js';
 import { notify } from '../utils/notify.js';
-import { createNotionClient } from '../notion/client.js';
-import { findDatePage, publishArticleToNotion } from '../notion/publisher.js';
+import { initNotionContext, publishArticleToNotion } from '../notion/publisher.js';
+import { toErrorMessage } from '../utils/error.js';
 
 export function registerRunCommand(program: Command): void {
   program
@@ -32,12 +32,6 @@ Examples:
 
         const config = loadConfig(options.config);
 
-        if (!process.env.ANTHROPIC_API_KEY) {
-          console.error('エラー: ANTHROPIC_API_KEY が設定されていません。');
-          console.error('.env ファイルまたは環境変数に ANTHROPIC_API_KEY を設定してください。');
-          process.exit(1);
-        }
-
         // === Step 1: Fetch ===
         notify('Mimi [1/3]', '記事を収集中...');
         console.log('\n[1/3] ソースから記事を収集中...');
@@ -54,8 +48,7 @@ Examples:
             try {
               adapters.push(new TwitterAdapter(source));
             } catch (error) {
-              const message = error instanceof Error ? error.message : String(error);
-              console.warn(`Twitter ソースをスキップ: ${message}`);
+              console.warn(`Twitter ソースをスキップ: ${toErrorMessage(error)}`);
             }
           }
         }
@@ -160,32 +153,23 @@ Examples:
         let generatedCount = 0;
 
         // Notion クライアント初期化（設定がある場合のみ）
-        let notionClient: Client | null = null;
-        let datePage: { id: string; url: string } | null = null;
+        const notionCtx = config.notion ? await initNotionContext(config.notion) : null;
 
-        if (config.notion) {
-          try {
-            notionClient = createNotionClient(config.notion.tokenEnvVar);
-            const today = new Date().toISOString().split('T')[0].replace(/-/g, '/');
-            datePage = await findDatePage(notionClient, config.notion.collectionDbId, today);
-            if (datePage) {
-              console.log(`Notion 日付ページを検出: ${today}`);
-            } else {
-              console.warn(`Notion に ${today} の日付ページが見つかりません。コンソール出力にフォールバックします。`);
-            }
-          } catch (error) {
-            console.warn(`Notion 初期化エラー: ${error instanceof Error ? error.message : String(error)}`);
-            console.warn('コンソール出力にフォールバックします。');
-          }
-        }
+        const newPublishedTopics: PublishedTopic[] = [];
 
         for (const article of selected) {
           console.log(`\n生成中: ${article.title}`);
           try {
             const content = await generateArticle(article, client, config.claude.model, tone);
             // Notion に出力（設定がある場合）
-            if (notionClient && datePage) {
-              const result = await publishArticleToNotion(notionClient, datePage.id, article.title, content);
+            if (notionCtx) {
+              const result = await publishArticleToNotion(
+                notionCtx.client,
+                notionCtx.datePage.id,
+                article.title,
+                content,
+                notionCtx.firstBlockId,
+              );
               if (result.success) {
                 console.log(`  → Notion に公開: ${result.notionPageUrl}`);
               } else {
@@ -196,7 +180,7 @@ Examples:
               console.log(content);
             }
             generatedCount++;
-            store.savePublishedTopic({
+            newPublishedTopics.push({
               id: article.id,
               title: article.title,
               topic: article.title,
@@ -204,8 +188,13 @@ Examples:
               url: article.url,
             });
           } catch (error) {
-            console.error(`  エラー: ${article.title} の生成に失敗しました:`, error);
+            console.error(`  エラー: ${article.title} の生成に失敗しました:`, toErrorMessage(error));
           }
+        }
+
+        // 全記事処理後にまとめて保存
+        if (newPublishedTopics.length > 0) {
+          store.savePublishedTopics(newPublishedTopics);
         }
 
         notify('Mimi [3/3]', `生成完了: ${generatedCount}件`);
@@ -221,7 +210,7 @@ Examples:
         notify('Mimi', 'パイプライン完了！');
       } catch (error) {
         notify('Mimi', 'パイプラインでエラーが発生しました');
-        console.error('run コマンドでエラーが発生しました:', error);
+        console.error('run コマンドでエラーが発生しました:', toErrorMessage(error));
         process.exit(1);
       }
     });
