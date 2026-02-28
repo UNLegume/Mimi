@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import type { Client } from '@notionhq/client';
 import { loadConfig } from '../config/schema.js';
 import { ArticleStore } from '../store/articles.js';
 import { RssAdapter } from '../sources/rss.js';
@@ -11,7 +12,8 @@ import { verifyArticles } from '../ai/verifier.js';
 import { selectArticles } from '../ai/selector.js';
 import { generateArticle } from '../ai/generator.js';
 import { notify } from '../utils/notify.js';
-import { filterByAge } from '../utils/filter.js';
+import { createNotionClient } from '../notion/client.js';
+import { findDatePage, publishArticleToNotion } from '../notion/publisher.js';
 
 export function registerRunCommand(program: Command): void {
   program
@@ -80,9 +82,8 @@ Examples:
 
         const allArticles = fetchResults.flatMap(r => r.articles);
         const store = new ArticleStore();
-        const deduped = store.deduplicate(allArticles);
-        const recent = filterByAge(deduped);
-        store.save('fetched.json', recent);
+        const { articles: recent, totalCount, newCount } = store.merge('fetched.json', allArticles);
+        store.appendHistory({ timestamp: new Date().toISOString(), filename: 'fetched.json', count: totalCount, newCount });
 
         console.log('--- 収集結果 ---');
         for (const result of fetchResults) {
@@ -91,22 +92,14 @@ Examples:
             : '';
           console.log(`  ${result.source}: ${result.articles.length}件${errorSuffix}`);
         }
-        const duplicatesRemoved = allArticles.length - deduped.length;
-        const filteredOut = deduped.length - recent.length;
-        console.log(`合計: ${allArticles.length}件収集 → 重複排除後 ${deduped.length}件 → 48時間以内 ${recent.length}件保存`);
-        if (duplicatesRemoved > 0) {
-          console.log(`  (重複 ${duplicatesRemoved}件を除外)`);
-        }
-        if (filteredOut > 0) {
-          console.log(`  (48時間以前の記事 ${filteredOut}件を除外)`);
-        }
+        console.log(`合計: ${allArticles.length}件収集 → 新規追加 ${newCount}件 / 累計 ${totalCount}件`);
 
         if (recent.length === 0) {
           console.log('収集記事がありません。処理を終了します。');
           return;
         }
 
-        notify('Mimi [1/3]', `記事収集完了: ${recent.length}件`);
+        notify('Mimi [1/3]', `記事収集完了: 新規${newCount}件 / 累計${totalCount}件`);
 
         // === Step 2: Select ===
         notify('Mimi [2/3]', '記事を検証・選別中...');
@@ -166,11 +159,42 @@ Examples:
         const tone = config.output.tone;
         let generatedCount = 0;
 
+        // Notion クライアント初期化（設定がある場合のみ）
+        let notionClient: Client | null = null;
+        let datePage: { id: string; url: string } | null = null;
+
+        if (config.notion) {
+          try {
+            notionClient = createNotionClient(config.notion.tokenEnvVar);
+            const today = new Date().toISOString().split('T')[0].replace(/-/g, '/');
+            datePage = await findDatePage(notionClient, config.notion.collectionDbId, today);
+            if (datePage) {
+              console.log(`Notion 日付ページを検出: ${today}`);
+            } else {
+              console.warn(`Notion に ${today} の日付ページが見つかりません。コンソール出力にフォールバックします。`);
+            }
+          } catch (error) {
+            console.warn(`Notion 初期化エラー: ${error instanceof Error ? error.message : String(error)}`);
+            console.warn('コンソール出力にフォールバックします。');
+          }
+        }
+
         for (const article of selected) {
           console.log(`\n生成中: ${article.title}`);
           try {
             const content = await generateArticle(article, client, config.claude.model, tone);
-            console.log(content);
+            // Notion に出力（設定がある場合）
+            if (notionClient && datePage) {
+              const result = await publishArticleToNotion(notionClient, datePage.id, article.title, content);
+              if (result.success) {
+                console.log(`  → Notion に公開: ${result.notionPageUrl}`);
+              } else {
+                console.warn(`  ⚠ Notion 公開失敗: ${result.error}`);
+                console.log(content);
+              }
+            } else {
+              console.log(content);
+            }
             generatedCount++;
             store.savePublishedTopic({
               id: article.id,
@@ -190,7 +214,7 @@ Examples:
         console.log('\n========================================');
         console.log('パイプライン完了');
         console.log('========================================');
-        console.log(`収集: ${allArticles.length}件 → 重複排除後 ${deduped.length}件 → 48時間以内 ${recent.length}件`);
+        console.log(`収集: ${allArticles.length}件 → 新規追加 ${newCount}件 / 累計 ${totalCount}件`);
         console.log(`検証: ${recent.length}件 → verified ${verified.length}件 / rejected ${rejected.length}件`);
         console.log(`選別: ${verified.length}件 → ${selected.length}件`);
         console.log(`生成: ${generatedCount}件`);

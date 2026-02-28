@@ -6,7 +6,6 @@ import { HackerNewsAdapter } from '../sources/hackernews.js';
 import { BlueskyAdapter } from '../sources/bluesky.js';
 import { TwitterAdapter } from '../sources/twitter.js';
 import type { SourceAdapter, FetchResult } from '../sources/types.js';
-import { filterByAge } from '../utils/filter.js';
 
 export function registerFetchCommand(program: Command): void {
   program
@@ -66,9 +65,8 @@ Examples:
         // 結果をフラット化して重複排除
         const allArticles = fetchResults.flatMap(r => r.articles);
         const store = new ArticleStore();
-        const deduped = store.deduplicate(allArticles);
-        const recent = filterByAge(deduped);
-        store.save('fetched.json', recent);
+        const { totalCount, newCount } = store.merge('fetched.json', allArticles);
+        store.appendHistory({ timestamp: new Date().toISOString(), filename: 'fetched.json', count: totalCount, newCount });
 
         // サマリー表示
         console.log('\n--- 収集結果 ---');
@@ -81,15 +79,7 @@ Examples:
             console.error(`    エラー: ${err}`);
           }
         }
-        const duplicatesRemoved = allArticles.length - deduped.length;
-        const filteredOut = deduped.length - recent.length;
-        console.log(`\n合計: ${allArticles.length}件収集 → 重複排除後 ${deduped.length}件 → 48時間以内 ${recent.length}件保存`);
-        if (duplicatesRemoved > 0) {
-          console.log(`  (重複 ${duplicatesRemoved}件を除外)`);
-        }
-        if (filteredOut > 0) {
-          console.log(`  (48時間以前の記事 ${filteredOut}件を除外)`);
-        }
+        console.log(`\n合計: ${allArticles.length}件収集 → 新規追加 ${newCount}件 / 累計 ${totalCount}件`);
       } catch (error) {
         console.error('fetchコマンドでエラーが発生しました:', error);
         process.exit(1);

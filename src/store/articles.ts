@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
 import type { Article } from '../sources/types.js';
+import { filterByAge } from '../utils/filter.js';
 
 interface ArticleRecord {
   id: string;
@@ -23,6 +24,13 @@ export interface PublishedTopic {
   topic: string;
   publishedAt: string;
   url: string;
+}
+
+export interface HistoryRecord {
+  timestamp: string;
+  filename: string;
+  count: number;
+  newCount: number;
 }
 
 export class ArticleStore {
@@ -106,6 +114,32 @@ export class ArticleStore {
       seen.add(article.url);
       return true;
     });
+  }
+
+  // 既存ファイルに新規記事をマージ保存（重複排除・期間フィルタ適用）
+  merge(filename: string, newArticles: Article[]): { articles: Article[]; totalCount: number; newCount: number } {
+    const existing = this.load(filename);
+    const combined = [...existing, ...newArticles];
+    const deduped = this.deduplicate(combined);
+    const filtered = filterByAge(deduped);
+    this.save(filename, filtered);
+    const newCount = filtered.length - existing.length;
+    return { articles: filtered, totalCount: filtered.length, newCount: Math.max(0, newCount) };
+  }
+
+  // 実行履歴をJSONファイルに追記保存
+  appendHistory(record: HistoryRecord): void {
+    const filePath = join(this.dataDir, 'history.json');
+    let existing: HistoryRecord[] = [];
+    if (existsSync(filePath)) {
+      try {
+        existing = JSON.parse(readFileSync(filePath, 'utf-8'));
+      } catch {
+        console.error('history.json のJSONパースに失敗しました。');
+      }
+    }
+    existing.push(record);
+    writeFileSync(filePath, JSON.stringify(existing, null, 2), 'utf-8');
   }
 
 }
