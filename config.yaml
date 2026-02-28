@@ -1,0 +1,61 @@
+sources:
+  - type: rss
+    name: "VentureBeat AI"
+    url: "https://venturebeat.com/category/ai/feed/"
+  - type: rss
+    name: "MIT Technology Review"
+    url: "https://www.technologyreview.com/feed/"
+  - type: hackernews
+    keywords: ["AI", "LLM", "GPT", "Claude", "machine learning", "deep learning"]
+    minScore: 100
+  - type: reddit
+    subreddit: "MachineLearning"
+    minUpvotes: 50
+  - type: arxiv
+    categories: ["cs.AI", "cs.CL", "cs.LG"]
+    maxResults: 20
+
+  # Bluesky アカウント監視（認証不要）
+  - type: bluesky
+    accounts:
+      # 公式アカウント
+      - "anthropic.com"
+      - "hf.co"
+      - "cohere.com"
+      # Anthropic
+      - "alexalbert.bsky.social"
+      - "colah.bsky.social"
+      # OpenAI
+      - "karpathy.bsky.social"
+      # Google / DeepMind
+      - "jeffdean.bsky.social"
+      # Meta AI
+      - "yann-lecun.bsky.social"
+      # Mistral AI
+      - "arthurmensch.bsky.social"
+      # 研究者・開発者
+      - "simonwillison.net"
+      - "emollick.bsky.social"
+    limit: 20
+    includeTextOnly: false
+    credibility: "official"
+
+  # Twitter/X（TWITTER_BEARER_TOKEN 設定時のみ有効）
+  # - type: twitter
+  #   accounts:
+  #     - "AnthropicAI"
+  #   limit: 20
+
+selection:
+  maxArticles: 5
+  criteria:
+    - novelty
+    - impact
+    - relevance
+
+output:
+  tone: "technical"
+  language: "ja"
+
+claude:
+  model: "claude-sonnet-4-6"
