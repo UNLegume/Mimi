@@ -312,7 +312,8 @@ export function getAccountsFromConfig(
   for (const source of config.sources) {
     if (source.type === 'bluesky') {
       result.push({ platform: 'bluesky', accounts: source.accounts });
-    } else if (source.type === 'twitter') {
+    }
+    if (source.type === 'xsearch') {
       result.push({ platform: 'twitter', accounts: source.accounts });
     }
   }

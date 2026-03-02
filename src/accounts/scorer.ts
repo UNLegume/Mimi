@@ -1,11 +1,11 @@
 /**
  * アカウント候補のAI業界関連性スコアリングモジュール
  *
- * Claude API を使用してアカウント候補をスコアリングし、
+ * Grok を使用してアカウント候補をスコアリングし、
  * Twitter API 未使用時のフォールバック候補生成も提供する。
  */
 
-import { createClient, callClaude } from '../ai/client.js';
+import type { AiClient } from '../ai/client.js';
 import type { AccountCandidate, ScoringResult } from './types.js';
 import { extractJsonFromResponse } from '../utils/json.js';
 import { toErrorMessage } from '../utils/error.js';
@@ -19,17 +19,16 @@ const TWITTER_FALLBACK_SYSTEM_PROMPT =
   'あなたはAI業界のソーシャルメディア専門家です。Twitter/Xで注目すべきAI関連アカウントを提案してください。';
 
 /**
- * アカウント候補を Claude API でスコアリングする。
+ * アカウント候補を Grok でスコアリングする。
  *
  * @param candidates スコアリング対象のアカウント候補配列
- * @param model 使用する Claude モデル ID
+ * @param client 使用する AiClient
  * @returns relevanceScore と scoreReason が付与され、スコア降順にソートされた候補配列
  */
 export async function scoreCandidates(
   candidates: AccountCandidate[],
-  model: string
+  client: AiClient
 ): Promise<AccountCandidate[]> {
-  const client = createClient(model);
   const scored = new Map<string, ScoringResult>();
 
   // 10件ずつバッチ処理
@@ -58,12 +57,7 @@ export async function scoreCandidates(
     ].join('\n');
 
     try {
-      const response = await callClaude(
-        client,
-        model,
-        SCORING_SYSTEM_PROMPT,
-        userPrompt
-      );
+      const response = await client.chat(SCORING_SYSTEM_PROMPT, userPrompt);
 
       const jsonStr = extractJsonFromResponse(response);
       const results: ScoringResult[] = JSON.parse(jsonStr);
@@ -124,18 +118,16 @@ export function filterByScore(
 
 /**
  * Twitter API が利用不可の場合のフォールバック。
- * Claude の知識を基に注目すべき AI 関連 Twitter アカウントを提案する。
+ * Grok の知識を基に注目すべき AI 関連 Twitter アカウントを提案する。
  *
- * @param model 使用する Claude モデル ID
+ * @param client 使用する AiClient
  * @param existingAccounts 重複を避けるための既存アカウントのハンドル配列
  * @returns platform='twitter', sharedFollowCount=0 の AccountCandidate 配列
  */
 export async function generateTwitterCandidates(
-  model: string,
+  client: AiClient,
   existingAccounts: string[]
 ): Promise<AccountCandidate[]> {
-  const client = createClient(model);
-
   const userPrompt = [
     'AI業界で注目すべき Twitter/X アカウントを20件提案してください。',
     '',
@@ -157,12 +149,7 @@ export async function generateTwitterCandidates(
     ']',
   ].join('\n');
 
-  const response = await callClaude(
-    client,
-    model,
-    TWITTER_FALLBACK_SYSTEM_PROMPT,
-    userPrompt
-  );
+  const response = await client.chat(TWITTER_FALLBACK_SYSTEM_PROMPT, userPrompt);
 
   const jsonStr = extractJsonFromResponse(response);
   const raw: Array<{

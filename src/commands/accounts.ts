@@ -3,8 +3,9 @@ import { loadConfig } from '../config/schema.js';
 import { getAccountsFromConfig, addAccountToConfig, removeAccountFromConfig } from '../accounts/config-writer.js';
 import { addAccountToDoc, removeAccountFromDoc } from '../accounts/doc-writer.js';
 import { discoverCandidates as discoverBluesky } from '../accounts/bluesky-graph.js';
-import { discoverCandidates as discoverTwitter, isTwitterAvailable } from '../accounts/twitter-graph.js';
+import { discoverCandidates as discoverTwitterXSearch } from '../accounts/twitter-xsearch.js';
 import { scoreCandidates, filterByScore, generateTwitterCandidates } from '../accounts/scorer.js';
+import { createAiClient } from '../ai/client.js';
 import type { Platform, AccountCandidate } from '../accounts/types.js';
 import { toErrorMessage } from '../utils/error.js';
 import * as readline from 'node:readline/promises';
@@ -91,22 +92,33 @@ Examples:
           allCandidates.push(...candidates);
         }
 
+        const client = createAiClient('grok', config.grok.model);
+
         if (options.source === 'twitter' || options.source === 'all') {
           const twitterAccounts = groups.find(g => g.platform === 'twitter')?.accounts ?? [];
-          let candidates: AccountCandidate[];
-          if (isTwitterAvailable()) {
-            candidates = await discoverTwitter(twitterAccounts);
-          } else {
-            candidates = await generateTwitterCandidates(config.claude.model, twitterAccounts);
-          }
-          console.log(`Twitter: ${candidates.length} 件の候補を発見`);
-          allCandidates.push(...candidates);
+          // x_search ベースの探索（インタラクション分析）
+          const xsearchCandidates = twitterAccounts.length > 0
+            ? await discoverTwitterXSearch(twitterAccounts)
+            : [];
+
+          // Grok 知識ベースの候補生成
+          const knowledgeCandidates = await generateTwitterCandidates(client, twitterAccounts);
+
+          // マージ（x_search 側を優先、ハンドル重複排除）
+          const seenHandles = new Set(xsearchCandidates.map(c => c.handle.toLowerCase()));
+          const mergedTwitterCandidates = [
+            ...xsearchCandidates,
+            ...knowledgeCandidates.filter(c => !seenHandles.has(c.handle.toLowerCase())),
+          ];
+
+          console.log(`Twitter: ${mergedTwitterCandidates.length} 件の候補を発見`);
+          allCandidates.push(...mergedTwitterCandidates);
         }
 
         let finalCandidates = allCandidates;
 
         if (!options.skipScoring && allCandidates.length > 0) {
-          const scored = await scoreCandidates(allCandidates, config.claude.model);
+          const scored = await scoreCandidates(allCandidates, client);
           finalCandidates = filterByScore(scored, minScore);
         }
 
