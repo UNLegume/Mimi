@@ -40,11 +40,14 @@ sources:
     includeTextOnly: false
     credibility: "official"
 
-  # Twitter/X（TWITTER_BEARER_TOKEN 設定時のみ有効）
-  # - type: twitter
-  #   accounts:
-  #     - "AnthropicAI"
-  #   limit: 20
+  # X(Twitter) 投稿監視（XAI_API_KEY 設定時のみ有効）
+  - type: xsearch
+    accounts:
+      - "AnthropicAI"
+      - "OpenAI"
+      - "simonw"
+      - "karpathy"
+    includeTextOnly: false
 
 selection:
   maxArticles: 3
@@ -59,6 +62,9 @@ output:
 
 claude:
   model: "claude-sonnet-4-6"
+
+grok:
+  model: "grok-4.1-fast"
 
 notion:
   collectionDbId: "c65611d0-119b-407e-9c0a-65b5ce4d396e"

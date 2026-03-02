@@ -1,15 +1,15 @@
 # Twitter/X 監視アカウントリスト
 
-Mimi の Twitter ソースアダプタで監視するAI関連アカウント。
+Mimi の XSearch ソースアダプタで監視するAI関連アカウント。
 `config.yaml` の `accounts` フィールドにハンドル（@なし）をコピーして使用する。
 
-> 最終更新: 2026-03-01
-> 注意: Twitter API v2 は有料（Basic $100/月〜）。TWITTER_BEARER_TOKEN が必要。
+> 最終更新: 2026-03-02
+> 注意: XSearch は Grok の x_search ツール経由で X/Twitter 投稿を取得する。Twitter API v2 は不要。`XAI_API_KEY` のみ必要。
 
 ## config.yaml 設定例
 
 ```yaml
-- type: twitter
+- type: xsearch
   accounts:
     # --- 公式アカウント ---
     - "AnthropicAI"
