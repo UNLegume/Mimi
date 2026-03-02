@@ -1,49 +1,52 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { sleep } from '../utils/sleep.js';
+import { withRetry } from '../utils/retry.js';
+import type { AiClient, ChatOptions } from './types.js';
+import { GrokAiClient } from './grok-client.js';
 
-export function createClient(model: string): Anthropic {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error('エラー: ANTHROPIC_API_KEY が設定されていません。');
-    console.error('.env ファイルまたは環境変数に ANTHROPIC_API_KEY を設定してください。');
-    process.exit(1);
-  }
-  // ANTHROPIC_API_KEY は Anthropic SDK がデフォルトで環境変数から読み込む
-  return new Anthropic();
-}
+export type { AiClient, ChatOptions } from './types.js';
 
-export async function callClaude(
+async function callClaude(
   client: Anthropic,
   model: string,
   systemPrompt: string,
   userPrompt: string,
   maxRetries = 3
 ): Promise<string> {
-  let lastError: unknown;
+  return withRetry(async () => {
+    const message = await client.messages.create({
+      model,
+      max_tokens: 4096,
+      system: systemPrompt,
+      messages: [
+        { role: 'user', content: userPrompt },
+      ],
+    });
 
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const message = await client.messages.create({
-        model,
-        max_tokens: 4096,
-        system: systemPrompt,
-        messages: [
-          { role: 'user', content: userPrompt },
-        ],
-      });
-
-      const content = message.content[0];
-      if (content.type !== 'text') {
-        throw new Error(`Unexpected response type: ${content.type}`);
-      }
-      return content.text;
-    } catch (error) {
-      lastError = error;
-      if (attempt < maxRetries) {
-        console.warn(`API呼び出し失敗 (${attempt}/${maxRetries}回目)。1秒後にリトライします...`);
-        await sleep(1000);
-      }
+    const content = message.content[0];
+    if (content.type !== 'text') {
+      throw new Error(`Unexpected response type: ${content.type}`);
     }
+    return content.text;
+  }, maxRetries);
+}
+
+export class AnthropicAiClient implements AiClient {
+  readonly provider = 'anthropic' as const;
+  private readonly client: Anthropic;
+
+  constructor(readonly model: string) {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error('ANTHROPIC_API_KEY が設定されていません。.env ファイルまたは環境変数に設定してください。');
+    }
+    this.client = new Anthropic();
   }
 
-  throw lastError;
+  async chat(systemPrompt: string, userPrompt: string, options?: ChatOptions): Promise<string> {
+    return callClaude(this.client, this.model, systemPrompt, userPrompt, options?.maxRetries);
+  }
+}
+
+export function createAiClient(provider: 'anthropic' | 'grok', model: string): AiClient {
+  if (provider === 'grok') return new GrokAiClient(model);
+  return new AnthropicAiClient(model);
 }

@@ -1,11 +1,9 @@
-import type Anthropic from '@anthropic-ai/sdk';
+import type { AiClient } from './types.js';
 import type { Article } from '../sources/types.js';
-import { callClaude } from './client.js';
 
 export async function generateArticle(
   article: Article,
-  client: Anthropic,
-  model: string,
+  client: AiClient,
   tone: string
 ): Promise<string> {
   const today = new Date().toISOString().split('T')[0];
@@ -62,5 +60,5 @@ URL: ${article.url}
 ${primarySourceInfo}
 ${contentSection}`;
 
-  return callClaude(client, model, systemPrompt, userPrompt);
+  return client.chat(systemPrompt, userPrompt);
 }

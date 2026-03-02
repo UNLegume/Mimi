@@ -1,8 +1,7 @@
-import type Anthropic from '@anthropic-ai/sdk';
+import type { AiClient } from './types.js';
 import type { Article } from '../sources/types.js';
 import type { PublishedTopic } from '../store/articles.js';
 import { subDays } from 'date-fns';
-import { callClaude } from './client.js';
 import { extractJsonFromResponse } from '../utils/json.js';
 
 interface ScoredArticle {
@@ -14,8 +13,7 @@ interface ScoredArticle {
 
 export async function selectArticles(
   articles: Article[],
-  client: Anthropic,
-  model: string,
+  client: AiClient,
   maxArticles: number,
   criteria: string[],
   publishedTopics: PublishedTopic[] = []
@@ -63,7 +61,7 @@ ${criteriaText}${topicsSection}
   const userPrompt = `以下の${articles.length}件の記事をスコアリングしてください。上位${maxArticles}件を選別します。\n\n${articleList}\n\nJSON配列のみ返してください。`;
 
   try {
-    const response = await callClaude(client, model, systemPrompt, userPrompt);
+    const response = await client.chat(systemPrompt, userPrompt);
     const jsonStr = extractJsonFromResponse(response);
     const scores: ScoredArticle[] = JSON.parse(jsonStr);
 
