@@ -5,9 +5,9 @@ import type { PublishedTopic } from '../store/articles.js';
 import { RssAdapter } from '../sources/rss.js';
 import { HackerNewsAdapter } from '../sources/hackernews.js';
 import { BlueskyAdapter } from '../sources/bluesky.js';
-import { TwitterAdapter } from '../sources/twitter.js';
+import { XSearchAdapter } from '../sources/xsearch.js';
 import type { SourceAdapter, FetchResult } from '../sources/types.js';
-import { createClient } from '../ai/client.js';
+import { createAiClient } from '../ai/client.js';
 import { verifyArticles } from '../ai/verifier.js';
 import { selectArticles } from '../ai/selector.js';
 import { generateArticle } from '../ai/generator.js';
@@ -44,11 +44,11 @@ Examples:
             adapters.push(new HackerNewsAdapter(source));
           } else if (source.type === 'bluesky') {
             adapters.push(new BlueskyAdapter(source));
-          } else if (source.type === 'twitter') {
+          } else if (source.type === 'xsearch') {
             try {
-              adapters.push(new TwitterAdapter(source));
+              adapters.push(new XSearchAdapter(source));
             } catch (error) {
-              console.warn(`Twitter ソースをスキップ: ${toErrorMessage(error)}`);
+              console.warn(`XSearch ソースをスキップ: ${toErrorMessage(error)}`);
             }
           }
         }
@@ -98,7 +98,8 @@ Examples:
         notify('Mimi [2/3]', '記事を検証・選別中...');
         console.log('\n[2/3] 記事を検証・選別中...');
 
-        const client = createClient(config.claude.model);
+        // Select: 常に Grok を使用
+        const selectorClient = createAiClient('grok', config.grok.model);
 
         console.log('記事を検証中...');
         const { verified, rejected } = verifyArticles(recent);
@@ -123,8 +124,7 @@ Examples:
         const publishedTopics = store.loadPublishedTopics();
         const selected = await selectArticles(
           verified,
-          client,
-          config.claude.model,
+          selectorClient,
           config.selection.maxArticles,
           config.selection.criteria,
           publishedTopics
@@ -152,6 +152,9 @@ Examples:
         const tone = config.output.tone;
         let generatedCount = 0;
 
+        // Generate: 常に Claude
+        const generatorClient = createAiClient('anthropic', config.claude.model);
+
         // Notion クライアント初期化（設定がある場合のみ）
         const notionCtx = config.notion ? await initNotionContext(config.notion) : null;
 
@@ -160,7 +163,7 @@ Examples:
         for (const article of selected) {
           console.log(`\n生成中: ${article.title}`);
           try {
-            const content = await generateArticle(article, client, config.claude.model, tone);
+            const content = await generateArticle(article, generatorClient, tone);
             // Notion に出力（設定がある場合）
             if (notionCtx) {
               const result = await publishArticleToNotion(

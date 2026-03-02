@@ -39,13 +39,12 @@ const BlueskySourceSchema = z.object({
   credibility: z.enum(['official', 'peer-reviewed', 'major-media', 'community']).optional(),
 });
 
-// Twitterソース設定
-const TwitterSourceSchema = z.object({
-  type: z.literal('twitter'),
+// XSearchソース設定
+const XSearchSourceSchema = z.object({
+  type: z.literal('xsearch'),
   accounts: z.array(z.string()),
-  limit: z.number().int().positive().default(20),
+  model: z.string().default('grok-4.1-fast'),
   includeTextOnly: z.boolean().default(false),
-  bearerToken: z.string().optional(),
 });
 
 // ソース設定の判別共用体
@@ -55,7 +54,7 @@ const SourceSchema = z.discriminatedUnion('type', [
   RedditSourceSchema,
   ArxivSourceSchema,
   BlueskySourceSchema,
-  TwitterSourceSchema,
+  XSearchSourceSchema,
 ]);
 
 // 選択設定
@@ -75,6 +74,11 @@ const ClaudeSchema = z.object({
   model: z.string(),
 });
 
+// Grok設定
+const GrokSchema = z.object({
+  model: z.string().default('grok-4.1-fast'),
+});
+
 // Notion設定
 const NotionSchema = z.object({
   collectionDbId: z.string(),
@@ -87,6 +91,7 @@ export const ConfigSchema = z.object({
   selection: SelectionSchema,
   output: OutputSchema,
   claude: ClaudeSchema,
+  grok: GrokSchema.default({ model: 'grok-4.1-fast' }),
   notion: NotionSchema.optional(),
 });
 
@@ -97,7 +102,7 @@ export type HackerNewsSourceConfig = z.infer<typeof HackerNewsSourceSchema>;
 export type RedditSourceConfig = z.infer<typeof RedditSourceSchema>;
 export type ArxivSourceConfig = z.infer<typeof ArxivSourceSchema>;
 export type BlueskySourceConfig = z.infer<typeof BlueskySourceSchema>;
-export type TwitterSourceConfig = z.infer<typeof TwitterSourceSchema>;
+export type XSearchSourceConfig = z.infer<typeof XSearchSourceSchema>;
 
 // config.yamlを読み込み、zodでバリデーションしてパース済みConfigオブジェクトを返す
 export function loadConfig(configPath: string = 'config.yaml'): Config {

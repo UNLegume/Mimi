@@ -43,8 +43,8 @@ Examples:
           console.log(`  ${index + 1}. [arXiv] カテゴリ: ${source.categories.join(', ')} (最大件数: ${source.maxResults})`);
         } else if (source.type === 'bluesky') {
           console.log(`  ${index + 1}. [Bluesky] アカウント: ${source.accounts.join(', ')} (最大件数: ${source.limit})`);
-        } else if (source.type === 'twitter') {
-          console.log(`  ${index + 1}. [Twitter/X] アカウント: ${source.accounts.join(', ')} (最大件数: ${source.limit})`);
+        } else if (source.type === 'xsearch') {
+          console.log(`  ${index + 1}. [XSearch] アカウント: ${source.accounts.join(', ')} (モデル: ${source.model})`);
         }
       });
     } catch (error) {

@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import { loadConfig } from '../config/schema.js';
 import { ArticleStore } from '../store/articles.js';
 import type { PublishedTopic } from '../store/articles.js';
-import { createClient } from '../ai/client.js';
+import { createAiClient } from '../ai/client.js';
 import { generateArticle } from '../ai/generator.js';
 import { initNotionContext, publishArticleToNotion } from '../notion/publisher.js';
 import { toErrorMessage } from '../utils/error.js';
@@ -42,7 +42,7 @@ Examples:
 
         console.log(`${targetArticles.length}件の記事を生成します...`);
 
-        const client = createClient(config.claude.model);
+        const client = createAiClient('anthropic', config.claude.model);
         const tone = config.output.tone;
 
         // Notion クライアント初期化（設定がある場合のみ）
@@ -53,7 +53,7 @@ Examples:
         for (const article of targetArticles) {
           console.log(`\n生成中: ${article.title}`);
           try {
-            const content = await generateArticle(article, client, config.claude.model, tone);
+            const content = await generateArticle(article, client, tone);
             // Notion に出力（設定がある場合）
             if (notionCtx) {
               const result = await publishArticleToNotion(

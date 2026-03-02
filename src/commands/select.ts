@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { loadConfig } from '../config/schema.js';
 import { ArticleStore } from '../store/articles.js';
-import { createClient } from '../ai/client.js';
+import { createAiClient } from '../ai/client.js';
 import { verifyArticles } from '../ai/verifier.js';
 import { selectArticles } from '../ai/selector.js';
 
@@ -29,7 +29,8 @@ Examples:
         }
         console.log(`${articles.length}件の記事を読み込みました。`);
 
-        const client = createClient(config.claude.model);
+        // Select: 常に Grok を使用
+        const client = createAiClient('grok', config.grok.model);
 
         // ステップ1: 検証
         console.log('\n記事を検証中...');
@@ -57,7 +58,6 @@ Examples:
         const selected = await selectArticles(
           verified,
           client,
-          config.claude.model,
           config.selection.maxArticles,
           config.selection.criteria,
           publishedTopics

@@ -1,4 +1,4 @@
-export type SourceType = 'rss' | 'hackernews' | 'reddit' | 'arxiv' | 'bluesky' | 'twitter';
+export type SourceType = 'rss' | 'hackernews' | 'reddit' | 'arxiv' | 'bluesky' | 'xsearch';
 
 export type SourceCredibility = 'official' | 'peer-reviewed' | 'major-media' | 'community';
 

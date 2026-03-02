@@ -4,7 +4,7 @@ import { ArticleStore } from '../store/articles.js';
 import { RssAdapter } from '../sources/rss.js';
 import { HackerNewsAdapter } from '../sources/hackernews.js';
 import { BlueskyAdapter } from '../sources/bluesky.js';
-import { TwitterAdapter } from '../sources/twitter.js';
+import { XSearchAdapter } from '../sources/xsearch.js';
 import type { SourceAdapter, FetchResult } from '../sources/types.js';
 
 export function registerFetchCommand(program: Command): void {
@@ -30,12 +30,12 @@ Examples:
             adapters.push(new HackerNewsAdapter(source));
           } else if (source.type === 'bluesky') {
             adapters.push(new BlueskyAdapter(source));
-          } else if (source.type === 'twitter') {
+          } else if (source.type === 'xsearch') {
             try {
-              adapters.push(new TwitterAdapter(source));
+              adapters.push(new XSearchAdapter(source));
             } catch (error) {
               const message = error instanceof Error ? error.message : String(error);
-              console.warn(`⚠️  Twitter ソースをスキップ: ${message}`);
+              console.warn(`⚠️  XSearch ソースをスキップ: ${message}`);
             }
           }
           // reddit / arxiv は未実装
