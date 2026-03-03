@@ -60,6 +60,47 @@ export async function findDatePage(
   return { id: page.id, url: page.url };
 }
 
+export async function publishArticleToDatabase(
+  client: Client,
+  databaseId: string,
+  title: string,
+  markdown: string,
+): Promise<PublishResult> {
+  try {
+    // Step 1: Convert markdown to Notion blocks
+    const blocks = markdownToBlocks(markdown);
+
+    // Step 2: Create a database page with properties and first 100 blocks
+    const firstChunk = blocks.slice(0, 100);
+    const pageResult = await client.pages.create({
+      parent: { database_id: databaseId },
+      properties: {
+        タイトル: { title: [{ text: { content: title } }] },
+        ライター: { select: { name: 'Mimi(速報)' } },
+        ステータス: { select: { name: '未着手' } },
+      },
+      children: firstChunk,
+    });
+    const newPageId = pageResult.id;
+
+    // Step 3: Append remaining content blocks in chunks of 100
+    for (let i = 100; i < blocks.length; i += 100) {
+      const chunk = blocks.slice(i, i + 100);
+      await client.blocks.children.append({
+        block_id: newPageId,
+        children: chunk,
+      });
+    }
+
+    // Step 4: Construct Notion page URL
+    const notionPageUrl = `https://www.notion.so/${newPageId.replace(/-/g, '')}`;
+
+    return { success: true, articleTitle: title, notionPageUrl };
+  } catch (error) {
+    return { success: false, articleTitle: title, error: String(error) };
+  }
+}
+
 export async function publishArticleToNotion(
   client: Client,
   datePageId: string,
