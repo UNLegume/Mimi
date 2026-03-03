@@ -44,6 +44,10 @@ Examples:
           console.log(`  ${index + 1}. [Bluesky] アカウント: ${source.accounts.join(', ')} (最大件数: ${source.limit})`);
         } else if (source.type === 'xsearch') {
           console.log(`  ${index + 1}. [XSearch] アカウント: ${source.accounts.join(', ')} (モデル: ${source.model})`);
+        } else if (source.type === 'bluesky-search') {
+          console.log(`  ${index + 1}. [Bluesky Search] キーワード: ${source.keywords.join(', ')} (言語: ${source.lang}, 最大件数: ${source.limit})`);
+        } else if (source.type === 'xsearch-keyword') {
+          console.log(`  ${index + 1}. [XSearch Keyword] キーワード: ${source.keywords.join(', ')} (${source.daysBack}日前まで)`);
         }
       });
     } catch (error) {

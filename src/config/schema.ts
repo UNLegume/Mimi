@@ -47,6 +47,25 @@ const XSearchSourceSchema = z.object({
   includeTextOnly: z.boolean().default(false),
 });
 
+// Blueskyキーワード検索ソース設定
+const BlueskySearchSourceSchema = z.object({
+  type: z.literal('bluesky-search'),
+  keywords: z.array(z.string()).min(1),
+  lang: z.string().default('en'),
+  sort: z.enum(['top', 'latest']).default('latest'),
+  limit: z.number().int().positive().default(25),
+  includeTextOnly: z.boolean().default(false),
+});
+
+// XSearchキーワード検索ソース設定
+const XSearchKeywordSourceSchema = z.object({
+  type: z.literal('xsearch-keyword'),
+  keywords: z.array(z.string()).min(1),
+  model: z.string().default('grok-4-1-fast-non-reasoning'),
+  includeTextOnly: z.boolean().default(false),
+  daysBack: z.number().int().positive().default(2),
+});
+
 // ソース設定の判別共用体
 const SourceSchema = z.discriminatedUnion('type', [
   RssSourceSchema,
@@ -55,6 +74,8 @@ const SourceSchema = z.discriminatedUnion('type', [
   ArxivSourceSchema,
   BlueskySourceSchema,
   XSearchSourceSchema,
+  BlueskySearchSourceSchema,
+  XSearchKeywordSourceSchema,
 ]);
 
 // 選択設定
@@ -82,6 +103,7 @@ const GrokSchema = z.object({
 // Notion設定
 const NotionSchema = z.object({
   collectionDbId: z.string(),
+  articleDbId: z.string().optional(),
   tokenEnvVar: z.string().default('NOTION_API_TOKEN'),
 });
 
@@ -103,6 +125,8 @@ export type RedditSourceConfig = z.infer<typeof RedditSourceSchema>;
 export type ArxivSourceConfig = z.infer<typeof ArxivSourceSchema>;
 export type BlueskySourceConfig = z.infer<typeof BlueskySourceSchema>;
 export type XSearchSourceConfig = z.infer<typeof XSearchSourceSchema>;
+export type BlueskySearchSourceConfig = z.infer<typeof BlueskySearchSourceSchema>;
+export type XSearchKeywordSourceConfig = z.infer<typeof XSearchKeywordSourceSchema>;
 
 // config.yamlを読み込み、zodでバリデーションしてパース済みConfigオブジェクトを返す
 export function loadConfig(configPath: string = 'config.yaml'): Config {

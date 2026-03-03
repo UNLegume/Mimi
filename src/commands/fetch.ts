@@ -5,6 +5,8 @@ import { RssAdapter } from '../sources/rss.js';
 import { HackerNewsAdapter } from '../sources/hackernews.js';
 import { BlueskyAdapter } from '../sources/bluesky.js';
 import { XSearchAdapter } from '../sources/xsearch.js';
+import { BlueskySearchAdapter } from '../sources/bluesky-search.js';
+import { XSearchKeywordAdapter } from '../sources/xsearch-keyword.js';
 import type { SourceAdapter, FetchResult } from '../sources/types.js';
 
 export function registerFetchCommand(program: Command): void {
@@ -36,6 +38,15 @@ Examples:
             } catch (error) {
               const message = error instanceof Error ? error.message : String(error);
               console.warn(`⚠️  XSearch ソースをスキップ: ${message}`);
+            }
+          } else if (source.type === 'bluesky-search') {
+            adapters.push(new BlueskySearchAdapter(source));
+          } else if (source.type === 'xsearch-keyword') {
+            try {
+              adapters.push(new XSearchKeywordAdapter(source));
+            } catch (error) {
+              const message = error instanceof Error ? error.message : String(error);
+              console.warn(`⚠️  XSearch Keyword ソースをスキップ: ${message}`);
             }
           }
           // reddit / arxiv は未実装
