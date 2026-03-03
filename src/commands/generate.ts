@@ -50,23 +50,50 @@ Examples:
 
         const publishedTopics: PublishedTopic[] = [];
 
-        for (const article of targetArticles) {
-          console.log(`\n生成中: ${article.title}`);
-          try {
+        const total = targetArticles.length;
+        const startTime = Date.now();
+        let completed = 0;
+        let failed = 0;
+
+        // 15秒ごとの進捗表示
+        const progressInterval = setInterval(() => {
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+          console.log(`  ⏳ 進捗: ${completed + failed}/${total}件完了 (${elapsed}秒経過)`);
+        }, 15_000);
+
+        // 全記事を並列生成
+        const results = await Promise.allSettled(
+          targetArticles.map(async (article, index) => {
+            const label = `[${index + 1}/${total}]`;
+            console.log(`${label} 生成開始: ${article.title}`);
+            const articleStart = Date.now();
             const content = await generateArticle(article, client, tone);
-            // Notion に出力（設定がある場合）
+            const secs = ((Date.now() - articleStart) / 1000).toFixed(1);
+            console.log(`${label} 生成完了: ${article.title} (${secs}秒)`);
+            completed++;
+            return { article, content };
+          })
+        );
+
+        clearInterval(progressInterval);
+
+        // 元の順序で Notion に出力
+        for (let i = 0; i < results.length; i++) {
+          const result = results[i];
+          if (result.status === 'fulfilled') {
+            const { article, content } = result.value;
             if (notionCtx) {
-              const result = await publishArticleToNotion(
+              const pubResult = await publishArticleToNotion(
                 notionCtx.client,
                 notionCtx.datePage.id,
                 article.title,
                 content,
                 notionCtx.firstBlockId,
               );
-              if (result.success) {
-                console.log(`  → Notion に公開: ${result.notionPageUrl}`);
+              if (pubResult.success) {
+                console.log(`  → Notion に公開: ${pubResult.notionPageUrl}`);
               } else {
-                console.warn(`  ⚠ Notion 公開失敗: ${result.error}`);
+                console.warn(`  ⚠ Notion 公開失敗: ${pubResult.error}`);
                 console.log(content);
               }
             } else {
@@ -79,8 +106,9 @@ Examples:
               publishedAt: new Date().toISOString(),
               url: article.url,
             });
-          } catch (error) {
-            console.error(`  エラー: ${article.title} の生成に失敗しました:`, toErrorMessage(error));
+          } else {
+            failed++;
+            console.error(`  エラー: ${targetArticles[i].title} の生成に失敗しました:`, toErrorMessage(result.reason));
           }
         }
 
