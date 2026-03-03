@@ -130,11 +130,11 @@ generate（生成）                     ← Claude (Anthropic)
 
 | フェーズ | AI プロバイダー | モデル | 用途 |
 |---------|----------------|--------|------|
-| fetch (XSearch) | Grok (xAI) | grok-4.1-fast | X/Twitter 投稿検索（x_search ツール） |
+| fetch (XSearch) | Grok (xAI) | grok-4-1-fast-non-reasoning | X/Twitter 投稿検索（x_search ツール） |
 | select (検証) | なし | — | ルールベース分類 |
-| select (スコアリング) | Grok (xAI) | grok-4.1-fast | novelty/impact/relevance 評価 |
+| select (スコアリング) | Grok (xAI) | grok-4-1-fast-non-reasoning | novelty/impact/relevance 評価 |
 | generate | Claude (Anthropic) | claude-sonnet-4-6 | 日本語テクニカル記事生成 |
-| accounts discover | Grok (xAI) | grok-4.1-fast | x_search インタラクション分析による X 候補探索、候補スコアリング |
+| accounts discover | Grok (xAI) | grok-4-1-fast-non-reasoning | x_search インタラクション分析による X 候補探索、候補スコアリング |
 
 設計方針: Grok = 構造化・分類タスク（高速・低コスト）、Claude = 記事生成タスク（高品質な日本語文章）
 
@@ -193,7 +193,7 @@ claude:
   model: "claude-sonnet-4-6"      # Generate フェーズで使用
 
 grok:
-  model: "grok-4.1-fast"          # Select / Accounts Discover で使用
+  model: "grok-4-1-fast-non-reasoning"          # Select / Accounts Discover で使用
 ```
 
 ## トピック重複防止

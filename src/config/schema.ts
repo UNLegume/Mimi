@@ -43,7 +43,7 @@ const BlueskySourceSchema = z.object({
 const XSearchSourceSchema = z.object({
   type: z.literal('xsearch'),
   accounts: z.array(z.string()),
-  model: z.string().default('grok-4.1-fast'),
+  model: z.string().default('grok-4-1-fast-non-reasoning'),
   includeTextOnly: z.boolean().default(false),
 });
 
@@ -76,7 +76,7 @@ const ClaudeSchema = z.object({
 
 // Grok設定
 const GrokSchema = z.object({
-  model: z.string().default('grok-4.1-fast'),
+  model: z.string().default('grok-4-1-fast-non-reasoning'),
 });
 
 // Notion設定
@@ -91,7 +91,7 @@ export const ConfigSchema = z.object({
   selection: SelectionSchema,
   output: OutputSchema,
   claude: ClaudeSchema,
-  grok: GrokSchema.default({ model: 'grok-4.1-fast' }),
+  grok: GrokSchema.default({ model: 'grok-4-1-fast-non-reasoning' }),
   notion: NotionSchema.optional(),
 });
 

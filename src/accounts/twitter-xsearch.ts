@@ -14,7 +14,7 @@ import { toErrorMessage } from '../utils/error.js';
 
 // ── 定数 ────────────────────────────────────────────────────────────────────
 
-const MODEL = 'grok-4.1-fast';
+const MODEL = 'grok-4-1-fast-non-reasoning';
 
 /** ユーザー間リクエストのスリープ時間（ms） */
 const INTER_USER_DELAY_MS = 1000;

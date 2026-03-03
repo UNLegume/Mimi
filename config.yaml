@@ -1,20 +1,4 @@
 sources:
-  - type: rss
-    name: "VentureBeat AI"
-    url: "https://venturebeat.com/category/ai/feed/"
-  - type: rss
-    name: "MIT Technology Review"
-    url: "https://www.technologyreview.com/feed/"
-  - type: hackernews
-    keywords: ["AI", "LLM", "GPT", "Claude", "machine learning", "deep learning"]
-    minScore: 100
-  - type: reddit
-    subreddit: "MachineLearning"
-    minUpvotes: 50
-  - type: arxiv
-    categories: ["cs.AI", "cs.CL", "cs.LG"]
-    maxResults: 20
-
   # Bluesky アカウント監視（認証不要）
   - type: bluesky
     accounts:
@@ -64,7 +48,7 @@ claude:
   model: "claude-sonnet-4-6"
 
 grok:
-  model: "grok-4.1-fast"
+  model: "grok-4-1-fast-non-reasoning"
 
 notion:
   collectionDbId: "c65611d0-119b-407e-9c0a-65b5ce4d396e"
