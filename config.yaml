@@ -67,30 +67,27 @@ sources:
   # Bluesky キーワード検索
   - type: bluesky-search
     keywords:
-      # 技術トレンド
-      - "AI agents"
-      - "RAG retrieval augmented"
-      - "reasoning model"
-      - "multimodal AI"
-      - "open source LLM"
-      - "AI safety alignment"
-      - "fine-tuning LLM"
-      - "code generation AI"
-      - "text to image"
-      - "LLM benchmark"
-      # 企業・サービス
-      - "OpenAI release"
+      # 優先3系列
       - "Anthropic Claude"
-      - "Google Gemini"
-      - "Meta Llama"
-      - "Mistral AI"
-      # モデル名
-      - "GPT-5"
+      - "Claude Code"
       - "Claude Opus"
       - "Claude Sonnet"
+      - "OpenAI release"
+      - "OpenAI Codex"
+      - "GPT-5"
+      - "ChatGPT update"
+      - "Google Gemini"
+      - "Gemini Code Assist"
       - "Gemini 2"
-      - "Llama 4"
-      - "Grok 3"
+      # AIコーディング
+      - "GitHub Copilot"
+      - "AI coding"
+      - "vibe coding"
+      - "agentic coding"
+      - "Cursor AI"
+      - "Windsurf AI"
+      - "Cline AI"
+      - "Devin AI"
     lang: "en"
     sort: "latest"
     limit: 25
@@ -99,23 +96,22 @@ sources:
   # X キーワード検索
   - type: xsearch-keyword
     keywords:
-      # 技術トレンド
-      - "AI agents"
-      - "RAG"
-      - "reasoning model"
-      - "multimodal"
-      - "open source LLM"
-      - "AI safety"
-      - "fine-tuning"
-      - "code generation"
-      # 企業・モデル
-      - "OpenAI"
+      # 優先3系列
       - "Anthropic Claude"
-      - "Google Gemini"
-      - "Meta Llama"
+      - "Claude Code"
+      - "OpenAI Codex"
+      - "OpenAI"
       - "GPT-5"
-      - "Llama 4"
-      - "Grok 3"
+      - "ChatGPT"
+      - "Google Gemini"
+      - "Gemini Code Assist"
+      # AIコーディング
+      - "GitHub Copilot"
+      - "AI coding"
+      - "vibe coding"
+      - "agentic coding"
+      - "Cursor AI"
+      - "Windsurf AI"
     includeTextOnly: false
     daysBack: 2
 
