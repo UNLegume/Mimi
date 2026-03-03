@@ -6,32 +6,30 @@ import { toErrorMessage } from '../utils/error.js';
 
 const XSEARCH_RESPONSE_SCHEMA = {
   type: 'json_schema' as const,
-  json_schema: {
-    name: 'x_search_results',
-    strict: true,
-    schema: {
-      type: 'object',
-      properties: {
-        posts: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              username: { type: 'string' },
-              text: { type: 'string' },
-              url: { type: 'string' },
-              external_url: { type: ['string', 'null'] },
-              like_count: { type: ['number', 'null'] },
-              posted_at: { type: ['string', 'null'] },
-            },
-            required: ['username', 'text', 'url', 'external_url', 'like_count', 'posted_at'],
-            additionalProperties: false,
+  name: 'x_search_results',
+  strict: true,
+  schema: {
+    type: 'object',
+    properties: {
+      posts: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            username: { type: 'string' },
+            text: { type: 'string' },
+            url: { type: 'string' },
+            external_url: { type: ['string', 'null'] },
+            like_count: { type: ['number', 'null'] },
+            posted_at: { type: ['string', 'null'] },
           },
+          required: ['username', 'text', 'url', 'external_url', 'like_count', 'posted_at'],
+          additionalProperties: false,
         },
       },
-      required: ['posts'],
-      additionalProperties: false,
     },
+    required: ['posts'],
+    additionalProperties: false,
   },
 };
 

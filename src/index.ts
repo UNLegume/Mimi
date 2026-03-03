@@ -1,6 +1,5 @@
 #!/usr/bin/env -S node --import tsx/esm
 import { config } from 'dotenv';
-config({ path: '.env.local' });
 config({ path: '.env' });
 
 import { Command } from 'commander';
