@@ -12,7 +12,7 @@ export async function withRetry<T>(
     } catch (error) {
       lastError = error;
       if (attempt < maxRetries - 1) {
-        await sleep(delayMs);
+        await sleep(delayMs * Math.pow(2, attempt));
       }
     }
   }
