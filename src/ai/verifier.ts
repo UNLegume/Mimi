@@ -6,7 +6,7 @@ interface VerifyResult {
   reason: string;
 }
 
-export interface VerificationOutput {
+interface VerificationOutput {
   verified: Article[];
   rejected: { article: Article; reason: string }[];
 }

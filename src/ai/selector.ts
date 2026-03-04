@@ -13,7 +13,7 @@ export interface SelectionScore {
   selected: boolean;
 }
 
-export interface SelectionResult {
+interface SelectionResult {
   selected: Article[];
   scores: SelectionScore[];
 }

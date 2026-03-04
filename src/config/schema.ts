@@ -146,16 +146,12 @@ export const ConfigSchema = z.object({
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
-export type SourceConfig = z.infer<typeof SourceSchema>;
 export type RssSourceConfig = z.infer<typeof RssSourceSchema>;
 export type HackerNewsSourceConfig = z.infer<typeof HackerNewsSourceSchema>;
-export type RedditSourceConfig = z.infer<typeof RedditSourceSchema>;
-export type ArxivSourceConfig = z.infer<typeof ArxivSourceSchema>;
 export type BlueskySourceConfig = z.infer<typeof BlueskySourceSchema>;
 export type XSearchSourceConfig = z.infer<typeof XSearchSourceSchema>;
 export type BlueskySearchSourceConfig = z.infer<typeof BlueskySearchSourceSchema>;
 export type XSearchKeywordSourceConfig = z.infer<typeof XSearchKeywordSourceSchema>;
-export type PipelineConfig = z.infer<typeof PipelineSchema>;
 
 // config.yamlを読み込み、zodでバリデーションしてパース済みConfigオブジェクトを返す
 export function loadConfig(configPath: string = 'config.yaml'): Config {

@@ -5,16 +5,6 @@
 /** ソースプラットフォーム */
 export type Platform = 'bluesky' | 'twitter';
 
-/** 監視中のアカウント（config.yaml から読み込み） */
-export interface MonitoredAccount {
-  handle: string;
-  platform: Platform;
-  /** 表示名（docs/*.md から取得、なければ handle） */
-  displayName?: string;
-  /** カテゴリ（公式アカウント、研究者 等） */
-  category?: string;
-}
-
 /** 候補アカウント（discover コマンドで発見） */
 export interface AccountCandidate {
   handle: string;

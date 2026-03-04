@@ -67,95 +67,6 @@ function mapSourceToNotion(source: SourceType): string {
   }
 }
 
-export async function savePipelineResultsToNotion(
-  client: Client,
-  dataSourceId: string,
-  databaseId: string,
-  dateDataSourceId: string | undefined,
-  dateDateDatabaseId: string | undefined,
-  verified: Article[],
-  rejected: { article: Article; reason: string }[],
-  scores: SelectionScore[],
-): Promise<{ saved: number; skipped: number }> {
-  // Build a score lookup map
-  const scoreMap = new Map(scores.map(s => [s.id, s]));
-
-  // Get existing URLs for dedup
-  const existingUrls = await checkDuplicateInDatabase(client, dataSourceId);
-
-  const today = new Date().toISOString().split('T')[0];
-  let saved = 0;
-  let skipped = 0;
-  const createdPageIds: string[] = [];
-
-  // Process all articles (verified + rejected)
-  const allEntries: { article: Article; verdict: '合格' | '除外' }[] = [
-    ...verified.map(a => ({ article: a, verdict: '合格' as const })),
-    ...rejected.map(r => ({ article: r.article, verdict: '除外' as const })),
-  ];
-
-  for (const { article, verdict } of allEntries) {
-    if (existingUrls.has(article.url) || (article.primarySourceUrl && existingUrls.has(article.primarySourceUrl))) {
-      skipped++;
-      continue;
-    }
-
-    const score = scoreMap.get(article.id);
-    const publishedDate = article.publishedAt
-      ? new Date(article.publishedAt).toISOString().split('T')[0]
-      : undefined;
-    const fetchedDate = article.fetchedAt
-      ? new Date(article.fetchedAt).toISOString().split('T')[0]
-      : today;
-
-    const properties: Record<string, unknown> = {
-      タイトル: { title: [{ text: { content: article.title.slice(0, 140) } }] },
-      記事URL: { url: article.url },
-      ソース: { select: { name: mapSourceToNotion(article.source) } },
-      判定結果: { select: { name: verdict } },
-      概要: { rich_text: [{ text: { content: article.summary || '' } }] },
-      処理日: { date: { start: today } },
-      収集日: { date: { start: fetchedDate } },
-      選出: { checkbox: false },
-    };
-
-    if (article.primarySourceUrl) {
-      properties['一次ソースURL'] = { url: article.primarySourceUrl };
-    }
-
-    if (publishedDate) {
-      properties['公開日'] = { date: { start: publishedDate } };
-    }
-
-    if (score) {
-      properties.novelty = { number: score.novelty };
-      properties.impact = { number: score.impact };
-      properties.relevance = { number: score.relevance };
-      properties['総合スコア'] = { number: score.totalScore };
-      properties['選出'] = { checkbox: score.selected };
-    }
-
-    try {
-      const result = await client.pages.create({
-        parent: { database_id: databaseId },
-        properties: properties as Parameters<typeof client.pages.create>[0]['properties'],
-      });
-      createdPageIds.push(result.id);
-      saved++;
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      console.warn(`  Notion 書き込み失敗: ${article.title} - ${msg}`);
-    }
-  }
-
-  // 親DB（処理日一覧）に日付ページを作成/更新
-  if (dateDataSourceId && dateDateDatabaseId && createdPageIds.length > 0) {
-    await upsertDateEntry(client, dateDataSourceId, dateDateDatabaseId, today, createdPageIds);
-  }
-
-  return { saved, skipped };
-}
-
 export async function publishContentToPipelineDb(
   client: Client,
   databaseId: string,
@@ -290,7 +201,7 @@ export async function fetchSelectedArticlesFromNotion(
   return results;
 }
 
-export function parseArticleFromNotionPage(page: Record<string, unknown>): Article {
+function parseArticleFromNotionPage(page: Record<string, unknown>): Article {
   const props = page.properties as Record<string, unknown>;
   const id = (page as { id: string }).id;
 
@@ -331,7 +242,7 @@ export function parseArticleFromNotionPage(page: Record<string, unknown>): Artic
   };
 }
 
-export async function upsertDateEntry(
+async function upsertDateEntry(
   client: Client,
   dateDataSourceId: string,
   dateDatabaseId: string,
