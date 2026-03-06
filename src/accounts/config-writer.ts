@@ -4,7 +4,7 @@
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { loadConfig } from '../config/schema.js';
+import { loadConfig, resolveAccount } from '../config/schema.js';
 import type { Config } from '../config/schema.js';
 import type { Platform, AccountOperationResult } from './types.js';
 import { toErrorMessage } from '../utils/error.js';
@@ -311,10 +311,10 @@ export function getAccountsFromConfig(
 
   for (const source of config.sources) {
     if (source.type === 'bluesky') {
-      result.push({ platform: 'bluesky', accounts: source.accounts });
+      result.push({ platform: 'bluesky', accounts: source.accounts.map(a => resolveAccount(a).handle) });
     }
     if (source.type === 'xsearch') {
-      result.push({ platform: 'twitter', accounts: source.accounts });
+      result.push({ platform: 'twitter', accounts: source.accounts.map(a => resolveAccount(a).handle) });
     }
   }
 

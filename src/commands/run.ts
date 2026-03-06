@@ -56,7 +56,7 @@ Examples:
         console.log('\n========================================');
         console.log('パイプライン完了');
         console.log('========================================');
-        console.log(`収集: ${fetchResult.totalFetched}件 → 重複除去後 ${fetchResult.deduped}件 → 直近 ${fetchResult.recent}件`);
+        console.log(`収集: ${fetchResult.totalFetched}件 → 重複除去後 ${fetchResult.deduped}件 → 直近 ${fetchResult.recent}件 → 本文取得 ${fetchResult.enriched}件`);
         console.log(`検証: ${selectResult.unprocessed}件 → verified ${selectResult.verified}件 / rejected ${selectResult.rejected}件`);
         console.log(`選別: ${selectResult.verified}件 → ${selectResult.selected}件`);
         console.log(`パイプライン処理: ${pipelineResult.processed}件`);

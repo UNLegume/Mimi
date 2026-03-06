@@ -191,7 +191,7 @@ export async function fetchSelectedArticlesFromNotion(
 
     for (const page of response.results) {
       if (!('properties' in page)) continue;
-      results.push(parseArticleFromNotionPage(page as Record<string, unknown>));
+      results.push(await parseArticleFromNotionPage(client, page as Record<string, unknown>));
     }
 
     hasMore = response.has_more;
@@ -201,7 +201,7 @@ export async function fetchSelectedArticlesFromNotion(
   return results;
 }
 
-function parseArticleFromNotionPage(page: Record<string, unknown>): Article {
+async function parseArticleFromNotionPage(client: Client, page: Record<string, unknown>): Promise<Article> {
   const props = page.properties as Record<string, unknown>;
   const id = (page as { id: string }).id;
 
@@ -236,9 +236,27 @@ function parseArticleFromNotionPage(page: Record<string, unknown>): Article {
   const fetchedAtStr = (fetchedAtProp as any)?.date?.start;
   const fetchedAt = fetchedAtStr ? new Date(fetchedAtStr) : new Date();
 
+  let content: string | undefined;
+  try {
+    const blocksResponse = await client.blocks.children.list({ block_id: id });
+    const paragraphTexts = blocksResponse.results
+      .filter((block): block is typeof block & { type: string } => 'type' in block && (block as any).type === 'paragraph')
+      .map((block) => {
+        const richText: Array<{ plain_text?: string }> = (block as any).paragraph?.rich_text ?? [];
+        return richText.map((rt) => rt.plain_text ?? '').join('');
+      });
+    const joined = paragraphTexts.join('');
+    if (joined) {
+      content = joined;
+    }
+  } catch {
+    // Block fetching failed; leave content as undefined
+  }
+
   return {
     id, title, url, primarySourceUrl, source,
     sourceName: sourceNotionName, summary, publishedAt, fetchedAt, metadata: {},
+    ...(content !== undefined ? { content } : {}),
   };
 }
 
@@ -335,11 +353,33 @@ export async function saveCollectedArticlesToNotion(
     if (publishedDate) {
       properties['公開日'] = { date: { start: publishedDate } };
     }
+    if (article.likeCount != null) {
+      properties['いいね数'] = { number: article.likeCount };
+    }
+    if (article.repostCount != null) {
+      properties['リポスト数'] = { number: article.repostCount };
+    }
+
+    const contentChildren: Parameters<typeof client.pages.create>[0]['children'] = [];
+    if (article.content) {
+      const CHUNK_SIZE = 2000;
+      for (let i = 0; i < article.content.length; i += CHUNK_SIZE) {
+        const chunk = article.content.slice(i, i + CHUNK_SIZE);
+        contentChildren.push({
+          object: 'block',
+          type: 'paragraph',
+          paragraph: {
+            rich_text: [{ type: 'text', text: { content: chunk } }],
+          },
+        } as NonNullable<Parameters<typeof client.pages.create>[0]['children']>[number]);
+      }
+    }
 
     try {
       const result = await client.pages.create({
         parent: { database_id: databaseId },
         properties: properties as Parameters<typeof client.pages.create>[0]['properties'],
+        ...(contentChildren.length > 0 ? { children: contentChildren } : {}),
       });
       createdPageIds.push(result.id);
       saved++;
@@ -381,7 +421,7 @@ export async function fetchUnprocessedArticlesFromNotion(
 
     for (const page of response.results) {
       if (!('properties' in page)) continue;
-      results.push(parseArticleFromNotionPage(page as Record<string, unknown>));
+      results.push(await parseArticleFromNotionPage(client, page as Record<string, unknown>));
     }
 
     hasMore = response.has_more;

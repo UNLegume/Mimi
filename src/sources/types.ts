@@ -15,6 +15,10 @@ export interface Article {
   publishedAt?: Date;            // 公開日時
   fetchedAt: Date;               // 収集日時
   metadata?: Record<string, unknown>;  // ソース固有メタデータ
+  authorTier?: 1 | 2 | 3 | 4;    // ソースの信頼度ティア
+  likeCount?: number;              // いいね数
+  repostCount?: number;            // リポスト数
+  isRepost?: boolean;              // リポスト経由で取得された記事か
 }
 
 export interface FetchResult {

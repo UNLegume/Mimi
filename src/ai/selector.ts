@@ -44,10 +44,13 @@ export async function selectArticles(
       `[${index}] id: ${article.id}`,
       `    title: ${article.title}`,
       `    url: ${article.url}`,
+      `    summary: ${article.summary?.slice(0, 200) ?? ''}`,
+      `    hasContent: ${!!article.content}`,
+      `    contentPreview: ${article.content?.slice(0, 300) ?? ''}`,
+      `    likeCount: ${article.likeCount ?? 'N/A'}`,
+      `    repostCount: ${article.repostCount ?? 'N/A'}`,
+      `    authorTier: ${article.authorTier ?? 'unknown'} (1=公式, 2=経営陣, 3=研究者, 4=開発者)`,
     ];
-    if (article.summary) {
-      parts.push(`    summary: ${article.summary.slice(0, 200)}`);
-    }
     return parts.join('\n');
   }).join('\n\n');
 
@@ -97,6 +100,17 @@ ${criteriaText}${topicsSection}
 - AI活用の具体的なTips・ハウツー記事
 - 実際のプロジェクトでのAIコーディング導入事例
 
+## ソースティア
+authorTier はソースの信頼度を示します。ティアが高い（数値が小さい）ソースからの情報は信頼性が高いため、スコアリング時に考慮してください。
+
+## エンゲージメント
+likeCount と repostCount はコミュニティの反応を示します。高いエンゲージメントは情報の重要性や注目度の指標として考慮してください。
+
+## 本文取得済みブースト
+以下に該当する記事は relevance と impact をそれぞれ +1 加点してください:
+- hasContent が true の記事（リンク先の本文が取得済みで、より詳細な記事生成が可能）
+- contentPreview に具体的な技術内容・コード例が含まれている記事はさらに +1
+
 必ずJSON配列で回答してください。各要素は以下の形式:
 { "id": "<記事ID>", "novelty": <1-10>, "impact": <1-10>, "relevance": <1-10>, "hasSpecifics": <true/false>, "isReproducible": <true/false>, "isPrimarySource": <true/false> }`;
 
@@ -108,12 +122,32 @@ ${criteriaText}${topicsSection}
     const scores: ScoredArticle[] = JSON.parse(jsonStr);
 
     // 総合スコアを計算してソート（不正値は 0 に丸める）
+    const articleMap = new Map(articles.map(a => [a.id, a]));
     const scored = scores.map(s => {
+      const article = articleMap.get(s.id);
+
+      // ティアボーナス
+      const tierBonus = article?.authorTier === 1 ? 1.0
+                      : article?.authorTier === 2 ? 0.7
+                      : article?.authorTier === 3 ? 0.3
+                      : 0;
+
+      // エンゲージメントボーナス
+      const engagementBonus =
+        (article?.likeCount ?? 0) >= 100 || (article?.repostCount ?? 0) >= 50 ? 1.0
+        : (article?.likeCount ?? 0) >= 30 || (article?.repostCount ?? 0) >= 15 ? 0.5
+        : 0;
+
+      const hasUsableContent = !!(article?.content || article?.summary);
+      const noContentPenalty = hasUsableContent ? 0 : -5;
+
       const bonus =
         (s.hasSpecifics ? 0.5 : 0) +
         (s.isReproducible ? 0.5 : 0) +
-        (s.isPrimarySource ? 0.5 : 0);
-      const totalScore = ((Number(s.novelty) || 0) + (Number(s.impact) || 0) + (Number(s.relevance) || 0)) / 3 + bonus;
+        (s.isPrimarySource ? 0.5 : 0) +
+        tierBonus +
+        engagementBonus;
+      const totalScore = ((Number(s.novelty) || 0) + (Number(s.impact) || 0) + (Number(s.relevance) || 0)) / 3 + bonus + noContentPenalty;
       return {
         id: s.id,
         novelty: Number(s.novelty) || 0,

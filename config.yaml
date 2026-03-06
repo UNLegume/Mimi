@@ -2,67 +2,108 @@ sources:
   # Bluesky アカウント監視（認証不要）
   - type: bluesky
     accounts:
-      # 公式アカウント
-      - "anthropic.com"
-      - "hf.co"
-      - "cohere.com"
-      - "langchain.bsky.social"
-      # Anthropic
-      - "alexalbert.bsky.social"
-      - "colah.bsky.social"
-      # OpenAI
-      - "karpathy.bsky.social"
-      # Google / DeepMind
-      - "jeffdean.bsky.social"
-      # Meta AI
-      - "yann-lecun.bsky.social"
-      # Mistral AI
-      - "arthurmensch.bsky.social"
-      # 研究者・開発者
-      - "simonwillison.net"
-      - "emollick.bsky.social"
-      - "mmitchell.bsky.social"
+      # tier 1: 公式アカウント
+      - handle: "anthropic.com"
+        tier: 1
+      - handle: "hf.co"
+        tier: 1
+      - handle: "cohere.com"
+        tier: 1
+      - handle: "langchain.bsky.social"
+        tier: 1
+      # tier 2: 経営者・技術リード
+      - handle: "alexalbert.bsky.social"
+        tier: 2
+      - handle: "colah.bsky.social"
+        tier: 2
+      # tier 3: 研究者・開発者
+      - handle: "karpathy.bsky.social"
+        tier: 3
+      - handle: "jeffdean.bsky.social"
+        tier: 3
+      - handle: "yann-lecun.bsky.social"
+        tier: 3
+      - handle: "arthurmensch.bsky.social"
+        tier: 3
+      - handle: "simonwillison.net"
+        tier: 3
+      - handle: "emollick.bsky.social"
+        tier: 3
+      - handle: "mmitchell.bsky.social"
+        tier: 3
+      # tier 4: その他開発者
       - "swyx.bsky.social"
       - "hamel.bsky.social"
     limit: 20
     includeTextOnly: false
+    includeReposts: true
     credibility: "official"
 
   # X(Twitter) 投稿監視（XAI_API_KEY 設定時のみ有効）
   - type: xsearch
     accounts:
-      # --- 企業公式 ---
-      - "AnthropicAI"
-      - "OpenAI"
-      - "xai"
-      - "GoogleDeepMind"
-      - "MetaAI"
-      - "NVIDIAAI"
-      - "MistralAI"
-      - "HuggingFace"
-      - "CohereForAI"
-      - "perplexity_ai"
-      - "StabilityAI"
-      - "LangChainAI"
-      - "llama_index"
-      - "runwayml"
-      - "deepseek_ai"
-      - "EleutherAI"
-      - "allen_ai"
-      # --- 経営者・リーダー ---
-      - "sama"
-      - "DarioAmodei"
-      - "demishassabis"
-      - "ClementDelangue"
-      - "AravSrinivas"
-      # --- 研究者・開発者 ---
-      - "karpathy"
-      - "simonw"
-      - "DrJimFan"
-      - "ylecun"
-      - "emollick"
-      - "jackclark"
-      - "hardmaru"
+      # tier 1: 企業公式
+      - handle: "AnthropicAI"
+        tier: 1
+      - handle: "OpenAI"
+        tier: 1
+      - handle: "xai"
+        tier: 1
+      - handle: "GoogleDeepMind"
+        tier: 1
+      - handle: "MetaAI"
+        tier: 1
+      - handle: "NVIDIAAI"
+        tier: 1
+      - handle: "MistralAI"
+        tier: 1
+      - handle: "HuggingFace"
+        tier: 1
+      - handle: "CohereForAI"
+        tier: 1
+      - handle: "perplexity_ai"
+        tier: 1
+      - handle: "StabilityAI"
+        tier: 1
+      - handle: "LangChainAI"
+        tier: 1
+      - handle: "llama_index"
+        tier: 1
+      - handle: "runwayml"
+        tier: 1
+      - handle: "deepseek_ai"
+        tier: 1
+      - handle: "EleutherAI"
+        tier: 1
+      - handle: "allen_ai"
+        tier: 1
+      # tier 2: 経営者・リーダー
+      - handle: "sama"
+        tier: 2
+      - handle: "DarioAmodei"
+        tier: 2
+      - handle: "demishassabis"
+        tier: 2
+      - handle: "ClementDelangue"
+        tier: 2
+      - handle: "AravSrinivas"
+        tier: 2
+      # tier 3: 研究者・開発者
+      - handle: "karpathy"
+        tier: 3
+      - handle: "simonw"
+        tier: 3
+      - handle: "DrJimFan"
+        tier: 3
+      - handle: "ylecun"
+        tier: 3
+      - handle: "emollick"
+        tier: 3
+      - handle: "jackclark"
+        tier: 3
+      - handle: "hardmaru"
+        tier: 3
+      # tier 4: その他
       - "swyx"
       - "kaborosu"
       - "swaborosu"
@@ -163,3 +204,14 @@ pipeline:
     maxChars: 280
     includeHashtags: true
     hashtagCount: 3
+
+contentFetch:
+  enabled: true
+  timeoutMs: 15000
+  maxLength: 10000
+  skipDomains:
+    - "twitter.com"
+    - "x.com"
+    - "bsky.app"
+    - "threads.net"
+    - "reddit.com"

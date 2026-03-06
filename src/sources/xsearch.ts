@@ -1,5 +1,6 @@
 import type { SourceAdapter, FetchResult } from './types.js';
 import type { XSearchSourceConfig } from '../config/schema.js';
+import { resolveAccount } from '../config/schema.js';
 import { parseXSearchResponse, XSEARCH_RESPONSE_SCHEMA } from './xsearch-parser.js';
 import { createXaiClient } from '../ai/grok-client.js';
 import { toErrorMessage } from '../utils/error.js';
@@ -17,10 +18,14 @@ export class XSearchAdapter implements SourceAdapter {
     const errors: string[] = [];
     const allArticles: import('./types.js').Article[] = [];
 
+    // アカウント解決（handle/tier）
+    const resolved = this.config.accounts.map(resolveAccount);
+    const tierMap = new Map(resolved.map(({ handle, tier }) => [handle.toLowerCase(), tier]));
+
     // allowed_x_handles は最大10件 → バッチ分割
     const batches: string[][] = [];
-    for (let i = 0; i < this.config.accounts.length; i += 10) {
-      batches.push(this.config.accounts.slice(i, i + 10));
+    for (let i = 0; i < resolved.length; i += 10) {
+      batches.push(resolved.slice(i, i + 10).map(r => r.handle));
     }
 
     // 日付範囲: 直近2日
@@ -51,6 +56,13 @@ export class XSearchAdapter implements SourceAdapter {
         });
 
         const articles = parseXSearchResponse(response as Record<string, unknown>);
+
+        // authorTier を付与
+        for (const article of articles) {
+          const username = ((article.metadata as any)?.username as string) ?? '';
+          const tier = tierMap.get(username.toLowerCase());
+          if (tier) article.authorTier = tier;
+        }
 
         // includeTextOnly=false の場合、外部リンクのないものを除外
         const filtered = this.config.includeTextOnly

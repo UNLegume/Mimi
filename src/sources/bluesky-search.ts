@@ -120,11 +120,13 @@ export class BlueskySearchAdapter implements SourceAdapter {
         fetchedAt: new Date(),
         metadata: {
           handle,
-          likeCount: post.likeCount,
-          repostCount: post.repostCount,
           hasLink: Boolean(externalLink),
           keyword,
         },
+        likeCount: post.likeCount,
+        repostCount: post.repostCount,
+        authorTier: 4,
+        isRepost: false,
       };
 
       articles.push(article);
@@ -145,7 +147,9 @@ export class BlueskySearchAdapter implements SourceAdapter {
 
       const response = await fetch(url.toString());
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        let body = '';
+        try { body = await response.text(); } catch { /* ignore */ }
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${body}`);
       }
 
       const data = (await response.json()) as SearchPostsResponse;

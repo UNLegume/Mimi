@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { Article, FetchResult, SourceAdapter } from './types.js';
 import type { BlueskySourceConfig } from '../config/schema.js';
+import { resolveAccount } from '../config/schema.js';
 
 export const BSKY_API_BASE = 'https://public.api.bsky.app/xrpc';
 
@@ -44,17 +45,21 @@ export class BlueskyAdapter implements SourceAdapter {
     const errors: string[] = [];
     const articles: Article[] = [];
 
+    const resolved = this.config.accounts.map(resolveAccount);
     const results = await Promise.allSettled(
-      this.config.accounts.map(handle => this.fetchAccountFeed(handle))
+      resolved.map(({ handle }) => this.fetchAccountFeed(handle))
     );
 
-    for (const result of results) {
+    for (let ri = 0; ri < results.length; ri++) {
+      const result = results[ri];
+      const { handle, tier } = resolved[ri];
+
       if (result.status === 'rejected') {
         errors.push(`Bluesky feed取得失敗: ${String(result.reason)}`);
         continue;
       }
 
-      const { handle, items, error } = result.value;
+      const { items, error } = result.value;
 
       if (error) {
         errors.push(`Bluesky @${handle} feed取得失敗: ${error}`);
@@ -62,8 +67,9 @@ export class BlueskyAdapter implements SourceAdapter {
       }
 
       for (const feedItem of items) {
-        // Skip reposts
-        if (feedItem.reason) continue;
+        // Skip reposts unless includeReposts is enabled
+        const isRepost = Boolean(feedItem.reason);
+        if (isRepost && !this.config.includeReposts) continue;
 
         const post = feedItem.post;
         const text = post.record.text;
@@ -102,10 +108,12 @@ export class BlueskyAdapter implements SourceAdapter {
           fetchedAt: new Date(),
           metadata: {
             handle,
-            likeCount: post.likeCount,
-            repostCount: post.repostCount,
             hasLink: Boolean(externalLink),
           },
+          authorTier: tier,
+          likeCount: post.likeCount,
+          repostCount: post.repostCount,
+          isRepost,
         };
 
         articles.push(article);

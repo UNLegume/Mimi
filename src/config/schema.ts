@@ -30,19 +30,29 @@ const ArxivSourceSchema = z.object({
   maxResults: z.number().int().positive(),
 });
 
+// アカウントエントリ（文字列 or { handle, tier }）
+const AccountEntrySchema = z.union([
+  z.string(),
+  z.object({
+    handle: z.string(),
+    tier: z.number().int().min(1).max(4).default(4),
+  }),
+]);
+
 // Blueskyソース設定
 const BlueskySourceSchema = z.object({
   type: z.literal('bluesky'),
-  accounts: z.array(z.string()),
+  accounts: z.array(AccountEntrySchema),
   limit: z.number().int().positive().default(20),
   includeTextOnly: z.boolean().default(false),
+  includeReposts: z.boolean().default(false),
   credibility: z.enum(['official', 'peer-reviewed', 'major-media', 'community']).optional(),
 });
 
 // XSearchソース設定
 const XSearchSourceSchema = z.object({
   type: z.literal('xsearch'),
-  accounts: z.array(z.string()),
+  accounts: z.array(AccountEntrySchema),
   model: z.string().default('grok-4-1-fast-non-reasoning'),
   includeTextOnly: z.boolean().default(false),
 });
@@ -134,6 +144,16 @@ const PipelineSchema = z.object({
   }).default({}),
 }).optional();
 
+// コンテンツフェッチ設定
+const ContentFetchSchema = z.object({
+  enabled: z.boolean().default(false),
+  timeoutMs: z.number().default(15000),
+  maxLength: z.number().default(10000),
+  skipDomains: z.array(z.string()).default([
+    'twitter.com', 'x.com', 'bsky.app', 'threads.net', 'reddit.com',
+  ]),
+}).default({});
+
 // 全体設定スキーマ
 export const ConfigSchema = z.object({
   sources: z.array(SourceSchema),
@@ -143,6 +163,7 @@ export const ConfigSchema = z.object({
   grok: GrokSchema.default({ model: 'grok-4-1-fast-non-reasoning' }),
   notion: NotionSchema.optional(),
   pipeline: PipelineSchema,
+  contentFetch: ContentFetchSchema,
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -152,6 +173,12 @@ export type BlueskySourceConfig = z.infer<typeof BlueskySourceSchema>;
 export type XSearchSourceConfig = z.infer<typeof XSearchSourceSchema>;
 export type BlueskySearchSourceConfig = z.infer<typeof BlueskySearchSourceSchema>;
 export type XSearchKeywordSourceConfig = z.infer<typeof XSearchKeywordSourceSchema>;
+
+// アカウントエントリからhandle/tierを取得するユーティリティ
+export function resolveAccount(entry: string | { handle: string; tier?: number }): { handle: string; tier: 1 | 2 | 3 | 4 } {
+  if (typeof entry === 'string') return { handle: entry, tier: 4 };
+  return { handle: entry.handle, tier: (entry.tier ?? 4) as 1 | 2 | 3 | 4 };
+}
 
 // config.yamlを読み込み、zodでバリデーションしてパース済みConfigオブジェクトを返す
 export function loadConfig(configPath: string = 'config.yaml'): Config {

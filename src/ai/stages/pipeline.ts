@@ -14,6 +14,11 @@ export async function runPipeline(
   const results: PipelineResult[] = [];
 
   for (const article of articles) {
+    if (!article.content && !article.summary) {
+      console.log(`  [Skip] ${article.title} — 本文・サマリーなし`);
+      continue;
+    }
+
     const result: PipelineResult = {
       articleId: article.id,
       title: article.title,

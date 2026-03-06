@@ -18,6 +18,7 @@ export const XSEARCH_RESPONSE_SCHEMA = {
             url: { type: 'string' },
             external_url: { type: ['string', 'null'] },
             like_count: { type: ['number', 'null'] },
+            repost_count: { type: ['number', 'null'] },
             posted_at: { type: ['string', 'null'] },
           },
           required: ['username', 'text', 'url', 'external_url', 'like_count', 'posted_at'],
@@ -37,6 +38,7 @@ interface XSearchPost {
   url: string;
   external_url?: string;
   like_count?: number;
+  repost_count?: number;
   posted_at?: string;
 }
 
@@ -119,8 +121,9 @@ export function parseXSearchPosts(jsonText: string): Article[] {
         via: 'xsearch',
         username: post.username,
         tweetUrl: post.url,
-        likeCount: post.like_count,
       },
+      likeCount: post.like_count ?? undefined,
+      repostCount: post.repost_count ?? undefined,
     }));
 }
 
